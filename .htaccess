@@ -1,0 +1,54 @@
+# .htaccess for PHP Teacher Evaluation System on Railway
+# Fixed version - only valid .htaccess directives
+
+RewriteEngine On
+
+# Prevent infinite loops
+RewriteCond %{ENV:REDIRECT_STATUS} 200
+RewriteRule ^.*$ - [L]
+
+# Security: Block access to sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "\.(sql|log|conf|ini|bak|backup|json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block access to includes and credentials directories
+RewriteRule ^(includes|credentials)/ - [F,L]
+
+# Allow access to reports directory
+RewriteRule ^reports/ - [L]
+
+# Error pages
+ErrorDocument 404 /error.php?code=404
+ErrorDocument 500 /error.php?code=500
+
+# PHP settings
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value max_execution_time 300
+php_value memory_limit 256M
+
+# Cache static files
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options SAMEORIGIN
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>

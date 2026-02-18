@@ -1,0 +1,38 @@
+# Composer
+vendor/
+composer.lock
+
+# Environment files  
+.env
+.env.local
+.env.production
+
+# Google credentials - use env vars instead
+credentials/*.json
+credentials/*.key
+credentials/*.pem
+
+# Generated files
+reports/*.html
+reports/*.csv
+reports/*.pdf
+reports/*.sql
+
+# System files
+.DS_Store
+Thumbs.db
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+.cache/
+
+# Keep directories but ignore contents
+!credentials/.gitkeep
+!reports/.gitkeep
