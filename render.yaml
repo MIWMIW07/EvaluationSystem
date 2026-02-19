@@ -1,14 +1,9 @@
 services:
   - type: web
     name: teacher-evaluation-system
-    env: php
-    runtime: php-8.2
-    region: oregon  # Choose closest to you
+    env: docker  # Changed from "php" to "docker" since you have a Dockerfile
     plan: free
-    buildCommand: |
-      composer install --no-dev
-      # Create necessary directories
-      mkdir -p /tmp/php-sessions
+    buildCommand: composer install --no-dev
     startCommand: php -S 0.0.0.0:10000 index.php
     envVars:
       - key: DATABASE_URL
@@ -16,16 +11,13 @@ services:
           name: evaluation-db
           property: connectionString
       - key: GOOGLE_CREDENTIALS_JSON
-        sync: false  # Will be added manually
+        sync: false
       - key: GOOGLE_SHEETS_ID
-        sync: false  # Will be added manually
+        sync: false
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
-      - key: SESSION_SAVE_PATH
-        value: /tmp/php-sessions
-    healthCheckPath: /index.php
 
 databases:
   - name: evaluation-db
