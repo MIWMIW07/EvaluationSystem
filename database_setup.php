@@ -201,16 +201,16 @@ function insertAllTeacherAssignments($pdo) {
     
     $shsSCTeachers = [
         // Grade 11 SC
-        'HE-11SC' => ['MR. LACERNA', 'MR. RODRIGUEZ', 'MR. VALENZUELA', 'MR. MATILA', 'MR. UMALI', 'MS. GENTEROY'],
-        'ICT-11SC' => ['MR. LACERNA', 'MR. RODRIGUEZ', 'MR. VALENZUELA', 'MR. MATILA', 'MR. JIMENEZ'],
-        'HUMSS-11SC' => ['MR. ICABANDE', 'MR. PATIAM', 'MS. VELE', 'MR. MATILA'],
-        'ABM-11SC' => ['MR. ICABANDE', 'MR. PATIAM', 'MS. VELE', 'MR. VALENZUELA', 'MR. RODRIGUEZ'],
+        'HE-11-SUNDAY CLASS' => ['MR. LACERNA', 'MR. ORNACHO', 'MR. ICABANDE', 'MS. GENTEROY'],
+        'ICT-11-SUNDAY CLASS' => ['MR. LACERNA', 'MR. ORNACHO', 'MR. VALENZUELA', 'MR. ICABANDE', 'MR. ESPEÑA'],
+        'HUMSS-11-SUNDAY CLASS' => ['MR. VALENZUELA', 'MR. ORNACHO', 'MRS. VELE', 'MR. VELE', 'MR. ICABANDE', 'MR. MATILA'],
+        'ABM-11-SUNDAY CLASS' => ['MR. VALENZUELA', 'MR. ORNACHO', 'MRS. VELE', 'MR. ICABANDE', 'MR. MATILA', 'MR. RODRIGUEZ'],
         
         // Grade 12 SC
-        'HE-12SC' => ['MR. VELE', 'MR. ICABANDE', 'MR. PATIAM', 'MS. GENTEROY'],
-        'ICT-12SC' => ['MR. VELE', 'MR. ICABANDE', 'MR. PATIAM', 'MR. JIMENEZ'],
-        'HUMSS-12SC' => ['MR. LACERNA', 'MR. UMALI', 'MR. PATIAM', 'MR. ICABANDE', 'MR. VELE'],
-        'ABM-12SC' => ['MR. LACERNA', 'MR. UMALI', 'MR. PATIAM', 'MS. IGHARAS'],
+        'HE-12-SUNDAY CLASS' => ['MS. GENTEROY', 'MS. OCTAVO', 'MR. ICABANDE', 'MS. GENTEROY'],
+        'ICT-12-SUNDAY CLASS' => ['MS. OCTAVO', 'MR. ICABANDE', 'MR. ESPEÑA'],
+        'HUMSS-12-SUNDAY CLASS' => ['MS. OCTAVO', 'MR. PATIAM', 'MRS. VELE', 'MR. ICABANDE', 'MR. LACERNA'],
+        'ABM-12-SUNDAY CLASS' => ['MS. OCTAVO', 'MR. PATIAM', 'MR, ORNACHO', 'MR. ICABANDE', 'MR. LACERNA', 'MS. VELE'],
     ];
     
     foreach ($shsSCTeachers as $section => $teachers) {
