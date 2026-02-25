@@ -47,33 +47,6 @@ try {
         echo "</table>";
     }
     
-    // Check specific teacher data
-    echo "<h4>🔎 Checking MR JIMENEZ Data</h4>";
-    $jimenezEvals = $pdo->prepare("
-        SELECT teacher_name, program, student_name, student_username, section
-        FROM evaluations 
-        WHERE teacher_name = 'MR JIMENEZ'
-        ORDER BY program, student_name
-    ");
-    $jimenezEvals->execute();
-    $jimenezData = $jimenezEvals->fetchAll();
-    
-    if (empty($jimenezData)) {
-        echo "<p style='color: red;'>❌ No evaluations found for MR JIMENEZ!</p>";
-    } else {
-        echo "<p>Found <strong>" . count($jimenezData) . "</strong> evaluations for MR JIMENEZ</p>";
-        echo "<table border='1' cellpadding='8' style='border-collapse: collapse;'>";
-        echo "<tr><th>Program</th><th>Student</th><th>Username</th><th>Section</th></tr>";
-        foreach ($jimenezData as $eval) {
-            echo "<tr>";
-            echo "<td>{$eval['program']}</td>";
-            echo "<td>{$eval['student_name']}</td>";
-            echo "<td>{$eval['student_username']}</td>";
-            echo "<td>{$eval['section']}</td>";
-            echo "</tr>";
-        }
-        echo "</table>";
-    }
     
     // Test Google Drive connection
     echo "<h4>🔗 Google Drive API Test</h4>";
