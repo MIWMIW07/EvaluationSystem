@@ -369,22 +369,6 @@ try {
     $uniqueSections = $stmt->fetchColumn();
     echo "<p><strong>Sections covered:</strong> {$uniqueSections}</p>";
     
-    // Show specific BSCS3M1 assignments (your section)
-    echo "<div class='highlight'>";
-    echo "<h3>🎯 Your Section (BSCS3M1) Teachers:</h3>";
-    $stmt = $pdo->prepare("SELECT teacher_name FROM teacher_assignments WHERE section = ? AND program = ? ORDER BY teacher_name");
-    $stmt->execute(['BSCS3M1', 'COLLEGE']);
-    $bscs3m1_teachers = $stmt->fetchAll();
-    
-    if ($bscs3m1_teachers) {
-        foreach ($bscs3m1_teachers as $teacher) {
-            echo "<p>• <strong>{$teacher['teacher_name']}</strong></p>";
-        }
-        echo "<p style='color:green;'><strong>✅ Found " . count($bscs3m1_teachers) . " teachers for your section!</strong></p>";
-    } else {
-        echo "<p style='color:red;'><strong>❌ No teachers found for BSCS3M1</strong></p>";
-    }
-    echo "</div>";
     
     echo "<div style='background: #d4edda; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin: 20px 0;'>";
     echo "<h3>🏫 System Information</h3>";
