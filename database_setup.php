@@ -76,24 +76,24 @@ function insertAllTeacherAssignments($pdo) {
         'BSCS-2N1' => ['MR. RODRIGUEZ', 'MR. JIMENEZ', 'MS. RENDORA', 'MR. GORDON'],
         'BSCS-3M1' => ['MR. PATALEN', 'MS. DIMAPILIS', 'MR. V. GORDON', 'MR. RODRIGUEZ'],
         'BSCS-4N1' => ['MR. CALCEÑA', 'MR. V. GORDON', 'MR. MATILA'],
-        'BSCS-1-SUNDAYCLASS' => [],
-        'BSCS-2-SUNDAYCLASS' => [],
+        'BSCS-1-SUNDAYCLASS' => ['MR. LACERNA', 'MR. PATIAM', 'MR. MATILA', 'MR. ESPEÑA', 'MR. VELE', 'MS. OCTAVO'],
+        'BSCS-2-SUNDAYCLASS' => ['MR. ICABANDE', 'MR. PATIAM', 'MS. DIMAPILIS', 'MR. ESPEÑA', 'MR. RODRIGUEZ'],
         
         // BSOA Programs  
         'BSOA-1M1' => ['MR. PATIAM', 'MR. LACERNA', 'MS. CARMONA', 'MS. IGHARAS', 'MS. RENDORA', 'MR. ATIENZA'],
         'BSOA-2N1' => ['MR. ICABANDE', 'MR. JIMENEZ', 'MRS. VELE', 'MR. CALCEÑA', 'MS. CARMONA', 'MS. RENDORA'],
         'BSOA-3M1' => ['MS. CARMONA', 'MS. IGHARAS', 'MR. CALCEÑA'],
         'BSOA-4N1' => ['MR. CALCEÑA'],
-        'BSOA-1-SUNDAYCLASS' => [],
-        'BSOA-2-SUNDAYCLASS' => [],
+        'BSOA-1-SUNDAYCLASS' => ['MR. PATIAM', 'MR. MATILA', 'RODRIGUEZ', 'MS. IGHARAS', 'MS. OCTAVO', 'MR. ICABANDE'],
+        'BSOA-2-SUNDAYCLASS' => ['MR. PATIAM', 'MR. ICABANDE', 'MS. IGHARAS', 'MS. DIMAPILIS', 'MS. OCTAVO', 'MR. VELE', 'MR. LACERNA'],
         
         // EDUC Programs
         'BTVTED-1M1' => ['MR. VELE', 'MR. MATILA', 'MR. ORNACHO', 'MR. PATIAM', 'MR. VALENZUELA', 'MS. OCTAVO', 'MS. RENDORA', 'MR. ATIENZA','MS. TESORO'],
         'BTVTED-2N1' => ['MRS. VELE', 'MR. VELE', 'MR. ICABANDE', 'MRS. TESORO', 'MR. MATILA', 'MS. OCTAVO', 'MS. RENDORA', 'MS. MAGNO'],
         'BTVTED-3M1' => ['MS. OCTAVO', 'MR. VALENZUELA', 'MS. MAGNO', 'MS. TESORO'],
         'BTVTED-4M1' => ['MS. TESORO'],
-        'BTVTED-1-SUNDAYCLASS' => [],
-        'BTVTED-2-SUNDAYCLASS' => [],
+        'BTVTED-1-SUNDAYCLASS' => ['MR. PATIAM', 'MR. VELE', 'MR. RODRIGUEZ', 'MRS. VELE', 'MS. GENTEROY', 'MS. OCTAVO', 'MR. MATILA', 'MR. VALENZUELA'],
+        'BTVTED-2-SUNDAYCLASS' => ['MR. ORNACHO', 'MR. PATIAM', 'MS. OCTAVO', 'MR. VALENZUELA', 'MS. GENTEROY', 'MR. VELE', 'MS. VELE', 'MS. DIMAPILIS'],
     ];
     
     foreach ($collegeTeachers as $section => $teachers) {
