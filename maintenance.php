@@ -239,18 +239,6 @@ ob_end_clean();
             }
         }
 
-        async function checkDatabaseData() {
-            const resultDiv = document.getElementById('diagnosticsResult');
-            resultDiv.innerHTML = '<p class="loading">Checking database data...</p>';
-            
-            try {
-                const response = await fetch('database_setup.php');
-                const html = await response.text();
-                resultDiv.innerHTML = `<div class="debug-details">${html}</div>`;
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="result-box result-error">Error: ${error.message}</div>`;
-            }
-        }
     </script>
 </body>
 </html>
