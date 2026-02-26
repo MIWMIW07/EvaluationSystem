@@ -952,7 +952,7 @@ $completion_percentage = $total_teachers > 0 ? round(($completed_evaluations / $
                 </div>
                 
                 <div class="teachers-section">
-                    <h2>👨‍🏫 Teachers Available for Evaluation</h2>
+                    <h2>Teachers Available for Evaluation</h2>
                     <p style="color: #800000; margin-bottom: 20px;">
                         Click "Evaluate Teacher" to start evaluating a teacher. Already evaluated teachers are marked as completed.
                     </p>
