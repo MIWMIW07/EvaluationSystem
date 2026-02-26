@@ -7,15 +7,6 @@ ini_set('error_log', __DIR__ . '/error_log.txt');
 
 ob_start();
 
-// Enhanced image support detection
-$hasImageSupport = false;
-if (extension_loaded('gd')) {
-    $gd_info = gd_info();
-    $hasImageSupport = isset($gd_info['PNG Support']) ? $gd_info['PNG Support'] : false;
-} elseif (extension_loaded('imagick')) {
-    $hasImageSupport = true;
-}
-
 // Function to get rating description based on score ranges
 function getRatingDescription($score) {
     if ($score >= 4.5) return 'Outstanding';
@@ -106,188 +97,141 @@ function getOverallInterpretation($score) {
     return 'Not rated.';
 }
 
+// Function to create Word document content
+function createWordDocument($content, $filename) {
+    // Word document header
+    $html = '
+    <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+        <meta charset="UTF-8">
+        <title>Evaluation Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 1in; }
+            h1 { color: #333; font-size: 18pt; text-align: center; }
+            h2 { color: #666; font-size: 14pt; border-bottom: 1px solid #ccc; }
+            table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+            th { background: #f0f0f0; font-weight: bold; padding: 8px; border: 1px solid #999; }
+            td { padding: 8px; border: 1px solid #999; vertical-align: top; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .header-content { display: flex; align-items: center; justify-content: center; gap: 20px; }
+            .school-name { font-size: 16pt; font-weight: bold; }
+            .signature { margin-top: 30px; }
+            .signature-line { width: 200px; border-bottom: 1px solid #000; margin: 5px 0; }
+            .rating-badge { background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10pt; }
+            .comments-section { margin-top: 20px; }
+            .positive-comment { background: #d4edda; padding: 10px; margin: 5px 0; border-left: 4px solid #28a745; }
+            .negative-comment { background: #fff3cd; padding: 10px; margin: 5px 0; border-left: 4px solid #ffc107; }
+            .stat-box { background: #f8f9fa; padding: 10px; margin: 10px 0; border: 1px solid #dee2e6; }
+            .logo { width: 80px; height: 80px; object-fit: contain; }
+        </style>
+    </head>
+    <body>
+        ' . $content . '
+    </body>
+    </html>';
+    
+    file_put_contents($filename, $html);
+    return true;
+}
+
+// Function to generate evaluation cover page HTML
+function getCoverPageHTML($teacherName, $program, $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore) {
+    // Check if logo exists
+    $logoPath = __DIR__ . '/images/logo-original.png';
+    $logoHtml = '';
+    
+    if (file_exists($logoPath)) {
+        $logoHtml = '<img src="' . $logoPath . '" class="logo" alt="School Logo">';
+    }
+    
+    $html = '
+    <div class="header">
+        <div class="header-content">
+            ' . $logoHtml . '
+            <div>
+                <div class="school-name">PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.</div>
+                <div>GMA-BRANCH (1ST Semester 2025-2026)</div>
+            </div>
+        </div>
+        <hr style="margin: 15px 0;">
+        <h1>Teacher Evaluation by the students result</h1>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Indicators</th>
+                <th>Rating</th>
+                <th>Description</th>
+                <th>Interpretation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1. Teaching Competencies</td>
+                <td>' . number_format($teachingScore, 2) . '</td>
+                <td>' . getRatingDescription($teachingScore) . '</td>
+                <td>' . getTeachingInterpretation($teachingScore) . '</td>
+            </tr>
+            <tr>
+                <td>2. Management Skills</td>
+                <td>' . number_format($managementScore, 2) . '</td>
+                <td>' . getRatingDescription($managementScore) . '</td>
+                <td>' . getManagementInterpretation($managementScore) . '</td>
+            </tr>
+            <tr>
+                <td>3. Guidance Skills</td>
+                <td>' . number_format($guidanceScore, 2) . '</td>
+                <td>' . getRatingDescription($guidanceScore) . '</td>
+                <td>' . getGuidanceInterpretation($guidanceScore) . '</td>
+            </tr>
+            <tr>
+                <td>4. Personal and Social Qualities/Skills</td>
+                <td>' . number_format($personalScore, 2) . '</td>
+                <td>' . getRatingDescription($personalScore) . '</td>
+                <td>' . getPersonalInterpretation($personalScore) . '</td>
+            </tr>
+            <tr style="background: #f0f0f0; font-weight: bold;">
+                <td>Overall Performance</td>
+                <td>' . number_format($overallScore, 2) . '</td>
+                <td>' . getRatingDescription($overallScore) . '</td>
+                <td>' . getOverallInterpretation($overallScore) . '</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <p><strong>Rating used:</strong> 5 - Outstanding | 4 - Very Satisfactory | 3 - Satisfactory | 2 - Fair | 1 - Poor</p>
+    
+    <table style="width: 100%; margin-top: 40px; border: none;">
+        <tr>
+            <td style="width: 50%; border: none;">
+                <div><strong>Tabulated by:</strong></div>
+                <div style="margin-top: 40px;">
+                    <img src="' . __DIR__ . '/images/Picture1.png" style="width: 150px; height: 50px;" alt="Signature">
+                </div>
+                <div><strong>Joanne P. Castro</strong></div>
+                <div>Guidance Associate</div>
+            </td>
+            <td style="width: 50%; border: none;">
+                <div><strong>Noted by:</strong></div>
+                <div style="margin-top: 40px;">
+                    <img src="' . __DIR__ . '/images/Picture2.png" style="width: 150px; height: 50px;" alt="Signature">
+                </div>
+                <div><strong>Myra V. Jumantoc</strong></div>
+                <div>HR Head</div>
+            </td>
+        </tr>
+    </table>
+    <div style="page-break-after: always;"></div>';
+    
+    return $html;
+}
+
 try {
     header('Content-Type: application/json');
     
     require_once 'includes/db_connection.php';
     
-    if (!class_exists('TCPDF')) {
-        require_once __DIR__ . '/tcpdf/tcpdf.php';
-    }
-    
-    class EvaluationPDF extends TCPDF {
-        private $hasImageSupport;
-        private $imageErrors = [];
-        
-        public function __construct($orientation='P', $unit='mm', $format='A4', $unicode=true, $encoding='UTF-8', $diskcache=false, $pdfa=false) {
-            parent::__construct($orientation, $unit, $format, $unicode, $encoding, $diskcache, $pdfa);
-            
-            // Check for image support
-            if (extension_loaded('gd')) {
-                $gd_info = gd_info();
-                $this->hasImageSupport = isset($gd_info['PNG Support']) ? $gd_info['PNG Support'] : false;
-            } else {
-                $this->hasImageSupport = extension_loaded('imagick');
-            }
-        }
-        
-        public function Header() {
-            // Add logo to the header only if image support is available
-            $logoPath = __DIR__ . '/images/logo-original.png';
-            if (file_exists($logoPath) && $this->hasImageSupport) {
-                try {
-                    $this->Image($logoPath, 10, 5, 20, 20, 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
-                    $this->SetX(35); // Move right after logo
-                } catch (Exception $e) {
-                    $this->SetX(10);
-                    $this->imageErrors[] = "Logo: " . $e->getMessage();
-                }
-            } else {
-                $this->SetX(10);
-                if (!file_exists($logoPath)) {
-                    $this->imageErrors[] = "Logo file not found: $logoPath";
-                }
-            }
-            
-            $this->SetFont('helvetica', 'B', 14);
-            $this->Cell(0, 10, 'PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.', 0, 1, 'C');
-            $this->SetFont('helvetica', '', 10);
-            $this->Cell(0, 5, 'GMA-BRANCH (1ST Semester 2025-2026)', 0, 1, 'C');
-            $this->Ln(5);
-        }
-        
-        public function Footer() {
-            $this->SetY(-15);
-            $this->SetFont('helvetica', 'I', 8);
-            $this->Cell(0, 10, 'Page ' . $this->getAliasNumPage() . '/' . $this->getAliasNbPages(), 0, 0, 'C');
-        }
-        
-        // Safe image method that won't crash the PDF
-        private function safeImage($file, $x, $y, $w, $h) {
-            if (!$this->hasImageSupport || !file_exists($file)) {
-                return false;
-            }
-            
-            try {
-                $this->Image($file, $x, $y, $w, $h);
-                return true;
-            } catch (Exception $e) {
-                $this->imageErrors[] = basename($file) . ": " . $e->getMessage();
-                return false;
-            }
-        }
-        
-        public function getImageErrors() {
-            return $this->imageErrors;
-        }
-        
-        // Add cover page method with decimal scores
-        public function AddEvaluationCoverPage($teacherName, $program, $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore) {
-            $this->AddPage();
-            
-            // Title
-            $this->SetFont('helvetica', 'B', 16);
-            $this->Cell(0, 15, 'Teacher Evaluation by the students result', 0, 1, 'C');
-            $this->Ln(10);
-            
-            // Evaluation Table - with adjusted column widths
-            $this->SetFont('helvetica', 'B', 11);
-            
-            // Table Header
-            $this->SetFillColor(200, 200, 200);
-            $this->Cell(45, 10, 'Indicators', 1, 0, 'C', true);
-            $this->Cell(25, 10, 'Rating', 1, 0, 'C', true);
-            $this->Cell(40, 10, 'Description', 1, 0, 'C', true);
-            $this->Cell(80, 10, 'Interpretation', 1, 1, 'C', true);
-            
-            $this->SetFont('helvetica', '', 9);
-            
-            // Teaching Competencies Row
-            $this->Cell(45, 8, '1. Teaching Competencies', 1, 0, 'L');
-            $this->Cell(25, 8, number_format($teachingScore, 2), 1, 0, 'C');
-            $this->Cell(40, 8, getRatingDescription($teachingScore), 1, 0, 'C');
-            $this->MultiCell(80, 4, getTeachingInterpretation($teachingScore), 1, 'L');
-            
-            // Management Skills Row
-            $this->Cell(45, 8, '2. Management Skills', 1, 0, 'L');
-            $this->Cell(25, 8, number_format($managementScore, 2), 1, 0, 'C');
-            $this->Cell(40, 8, getRatingDescription($managementScore), 1, 0, 'C');
-            $this->MultiCell(80, 4, getManagementInterpretation($managementScore), 1, 'L');
-            
-            // Guidance Skills Row
-            $this->Cell(45, 8, '3. Guidance Skills', 1, 0, 'L');
-            $this->Cell(25, 8, number_format($guidanceScore, 2), 1, 0, 'C');
-            $this->Cell(40, 8, getRatingDescription($guidanceScore), 1, 0, 'C');
-            $this->MultiCell(80, 4, getGuidanceInterpretation($guidanceScore), 1, 'L');
-            
-            // Personal and Social Qualities/Skills Row
-            $this->SetFont('helvetica', '', 8);
-            $this->MultiCell(45, 4, '4. Personal and Social Qualities/Skills', 1, 'L', 0, 0);
-            $this->SetFont('helvetica', '', 9);
-            $this->Cell(25, 8, number_format($personalScore, 2), 1, 0, 'C');
-            $this->Cell(40, 8, getRatingDescription($personalScore), 1, 0, 'C');
-            $this->MultiCell(80, 4, getPersonalInterpretation($personalScore), 1, 'L');
-            
-            // Reset font for the last row
-            $this->SetFont('helvetica', 'B', 9);
-            
-            // Overall Performance Row (bold)
-            $this->SetFillColor(220, 220, 220);
-            $this->Cell(45, 8, 'Overall Performance', 1, 0, 'L', true);
-            $this->Cell(25, 8, number_format($overallScore, 2), 1, 0, 'C', true);
-            $this->Cell(40, 8, getRatingDescription($overallScore), 1, 0, 'C', true);
-            $this->MultiCell(80, 4, getOverallInterpretation($overallScore), 1, 'L', true);
-            
-            $this->Ln(8);
-            
-            // Rating Scale
-            $this->SetFont('helvetica', '', 9);
-            $this->Cell(0, 6, 'Rating used: 5 - Outstanding 4 - Very Satisfactory 3 - Satisfactory 2 - Fair 1 - Poor', 0, 1, 'L');
-            
-            $this->Ln(15);
-            
-            // Signature Sections - Clean layout
-            $currentY = $this->GetY();
-            
-            // Tabulated by section (Left side)
-            $this->SetFont('helvetica', 'B', 11);
-            $this->Cell(80, 8, 'Tabulated by :', 0, 1, 'L');
-            $this->Ln(8);
-            
-            // Add Joanne P. Castro signature
-            $signature1Path = __DIR__ . '/images/Picture1.png';
-            $signature1Added = $this->safeImage($signature1Path, 20, $this->GetY(), 40, 15);
-            
-            $this->SetY($this->GetY() + 18);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(80, 6, 'Joanne P. Castro', 0, 1, 'L');
-            $this->SetFont('helvetica', '', 9);
-            $this->Cell(80, 6, 'Guidance Associate', 0, 1, 'L');
-            
-            // Reset Y position for second signature
-            $this->SetY($currentY);
-            
-            // Noted by section (Right side)
-            $this->SetX(110);
-            $this->SetFont('helvetica', 'B', 11);
-            $this->Cell(80, 8, 'Noted by :', 0, 1, 'L');
-            $this->SetX(110);
-            $this->Ln(8);
-            
-            // Add Myra V. Jumantoc signature
-            $signature2Path = __DIR__ . '/images/Picture2.png';
-            $signature2Added = $this->safeImage($signature2Path, 120, $this->GetY(), 40, 15);
-            
-            $this->SetY($this->GetY() + 18);
-            $this->SetX(110);
-            $this->SetFont('helvetica', 'B', 10);
-            $this->Cell(80, 6, 'Myra V. Jumantoc', 0, 1, 'L');
-            $this->SetX(110);
-            $this->SetFont('helvetica', '', 9);
-            $this->Cell(80, 6, 'HR Head', 0, 1, 'L');
-        }
-    }
-
     $pdo = getPDO();
     
     $reportsDir = __DIR__ . '/reports/Teacher Evaluation Reports/Reports/';
@@ -324,7 +268,6 @@ try {
     $individualReports = 0;
     $summaryReports = 0;
     $totalFiles = 0;
-    $allImageErrors = [];
 
     foreach ($combinations as $combo) {
         $teacherName = $combo['teacher_name'];
@@ -353,14 +296,11 @@ try {
         $evaluations = $evalStmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($evaluations as $eval) {
-            $filename = $programDir . 'Individual_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $eval['student_name']) . '_' . $section . '.pdf';
+            $filename = $programDir . 'Individual_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $eval['student_name']) . '_' . $section . '.doc';
             $result = generateIndividualReport($eval, $filename);
             if ($result['success']) {
                 $individualReports++;
                 $totalFiles++;
-            }
-            if (!empty($result['image_errors'])) {
-                $allImageErrors = array_merge($allImageErrors, $result['image_errors']);
             }
         }
     }
@@ -372,14 +312,11 @@ try {
         $teacherDir = $reportsDir . $teacherName . '/';
         $programDir = $teacherDir . $program . '/';
 
-        $summaryFilename = $programDir . 'Summary_' . $program . '_ALL_SECTIONS.pdf';
+        $summaryFilename = $programDir . 'Summary_' . $program . '_ALL_SECTIONS.doc';
         $result = generateSummaryReport($pdo, $teacherName, $program, $summaryFilename);
         if ($result['success']) {
             $summaryReports++;
             $totalFiles++;
-        }
-        if (!empty($result['image_errors'])) {
-            $allImageErrors = array_merge($allImageErrors, $result['image_errors']);
         }
     }
 
@@ -387,22 +324,13 @@ try {
     
     $response = [
         'success' => true,
-        'message' => 'Reports generated successfully!',
+        'message' => 'Reports generated successfully as Word documents!',
         'teachers_processed' => count($teachersProcessed),
         'individual_reports' => $individualReports,
         'summary_reports' => $summaryReports,
         'total_files' => $totalFiles,
         'reports_location' => 'reports/Teacher Evaluation Reports/Reports/'
     ];
-    
-    // Add warnings if there were image issues
-    if (!$hasImageSupport) {
-        $response['warning'] = 'GD or Imagick extension not available. Images were not included in the PDFs. Please contact your hosting provider to enable PHP GD extension.';
-    }
-    
-    if (!empty($allImageErrors)) {
-        $response['image_errors'] = array_unique($allImageErrors);
-    }
     
     echo json_encode($response);
 
@@ -421,20 +349,7 @@ try {
 }
 
 function generateIndividualReport($evaluation, $outputPath) {
-    $imageErrors = [];
-    
     try {
-        $pdf = new EvaluationPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-        
-        $pdf->SetCreator(PDF_CREATOR);
-        $pdf->SetAuthor('Teacher Evaluation System');
-        $pdf->SetTitle("Evaluation - " . $evaluation['student_name']);
-        
-        $pdf->SetMargins(10, 40, 10);
-        $pdf->SetHeaderMargin(10);
-        $pdf->SetFooterMargin(10);
-        $pdf->SetAutoPageBreak(TRUE, 15);
-        
         // Calculate scores WITHOUT rounding - keep as decimals
         $teachingScore = ($evaluation['q1_1'] + $evaluation['q1_2'] + $evaluation['q1_3'] + 
                          $evaluation['q1_4'] + $evaluation['q1_5'] + $evaluation['q1_6']) / 6;
@@ -450,28 +365,21 @@ function generateIndividualReport($evaluation, $outputPath) {
         
         $overallScore = ($teachingScore + $managementScore + $guidanceScore + $personalScore) / 4;
         
-        // Add cover page with evaluation results (decimal scores)
-        $pdf->AddEvaluationCoverPage($evaluation['teacher_name'], $evaluation['program'], 
+        // Start building HTML content
+        $content = getCoverPageHTML($evaluation['teacher_name'], $evaluation['program'], 
                                    $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore);
         
-        // Collect image errors
-        $imageErrors = $pdf->getImageErrors();
-        
-        // Start detailed evaluation content on page 2
-        $pdf->AddPage();
-        
-        // Reset margins for detailed content
-        $pdf->SetMargins(10, 20, 10);
-        
-        $pdf->SetFont('helvetica', 'B', 12);
-        $pdf->Cell(0, 6, "Name: " . strtoupper($evaluation['teacher_name']), 0, 1);
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 5, "Student: " . $evaluation['student_name'], 0, 1);
-        $pdf->Cell(0, 5, "Program: " . $evaluation['program'] . " | Section: " . $evaluation['section'], 0, 1);
-        $pdf->Cell(0, 5, "Date: " . date('F j, Y', strtotime($evaluation['submitted_at'])), 0, 1);
-        $pdf->Ln(5);
+        // Student Info
+        $content .= '
+        <h2>Detailed Evaluation Results</h2>
+        <div class="stat-box">
+            <p><strong>Name:</strong> ' . strtoupper($evaluation['teacher_name']) . '</p>
+            <p><strong>Student:</strong> ' . $evaluation['student_name'] . '</p>
+            <p><strong>Program:</strong> ' . $evaluation['program'] . ' | Section: ' . $evaluation['section'] . '</p>
+            <p><strong>Date:</strong> ' . date('F j, Y', strtotime($evaluation['submitted_at'])) . '</p>
+        </div>';
 
-        // English questions with adjusted column widths
+        // Questions table
         $questions = [
             'TEACHING COMPETENCE' => [
                 'q1_1' => 'Analyzes and explains lessons without reading from the book in class',
@@ -508,104 +416,65 @@ function generateIndividualReport($evaluation, $outputPath) {
         $questionCount = 0;
 
         foreach ($questions as $category => $categoryQuestions) {
-            $pdf->SetFont('helvetica', 'B', 10);
-            $pdf->SetFillColor(220, 220, 220);
-            $pdf->Cell(0, 7, $category, 1, 1, 'L', true);
+            $content .= '<h3>' . $category . '</h3>';
+            $content .= '<table>';
+            $content .= '<tr><th style="width: 10%">No.</th><th style="width: 70%">Question</th><th style="width: 20%">Score</th></tr>';
             
-            $pdf->SetFont('helvetica', '', 8);
             $qNum = 1;
             foreach ($categoryQuestions as $key => $question) {
                 $score = $evaluation[$key] ?? 0;
                 $totalScore += $score;
                 $questionCount++;
                 
-                $pdf->Cell(10, 6, "$categoryNum.$qNum", 1, 0, 'C');
-                $pdf->Cell(140, 6, $question, 1, 0, 'L');
-                $pdf->Cell(40, 6, $score, 1, 1, 'C');
+                $content .= '<tr>';
+                $content .= '<td>' . $categoryNum . '.' . $qNum . '</td>';
+                $content .= '<td>' . $question . '</td>';
+                $content .= '<td style="text-align: center">' . $score . '</td>';
+                $content .= '</tr>';
                 $qNum++;
             }
+            $content .= '</table><br>';
             $categoryNum++;
-            $pdf->Ln(2);
         }
 
         $averageScore = $questionCount > 0 ? $totalScore / $questionCount : 0;
         
-        $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->SetFillColor(255, 200, 150);
-        $pdf->Cell(150, 8, 'AVERAGE SCORE', 1, 0, 'R', true);
-        $pdf->Cell(40, 8, number_format($averageScore, 2), 1, 1, 'C', true);
+        $content .= '<table style="background: #ffe6cc;">';
+        $content .= '<tr><th style="width: 80%">AVERAGE SCORE</th><th style="width: 20%">' . number_format($averageScore, 2) . '</th></tr>';
+        $content .= '</table><br>';
 
-        $pdf->Ln(5);
-
-        // Comments section - display only comments without student names
+        // Comments section
         $positiveComments = !empty(trim($evaluation['positive_comments'] ?? '')) ? $evaluation['positive_comments'] : '';
         $negativeComments = !empty(trim($evaluation['negative_comments'] ?? '')) ? $evaluation['negative_comments'] : '';
 
-        if (!empty($positiveComments) || !empty($negativeComments)) {
-            // Check if we need a new page
-            if ($pdf->GetY() > 230) {
-                $pdf->AddPage();
-            }
-            
-            $pdf->SetFont('helvetica', 'B', 10);
-            $pdf->Cell(0, 6, 'STUDENT COMMENTS:', 0, 1);
-            $pdf->Ln(2);
+        $content .= '<div class="comments-section">';
+        $content .= '<h3>STUDENT COMMENTS:</h3>';
+        
+        // Positive feedback
+        $content .= '<div class="positive-comment">';
+        $content .= '<strong>POSITIVE FEEDBACK</strong><br>';
+        $content .= !empty($positiveComments) ? $positiveComments : 'No positive feedback provided.';
+        $content .= '</div>';
+        
+        // Areas for improvement
+        $content .= '<div class="negative-comment">';
+        $content .= '<strong>AREAS FOR IMPROVEMENT</strong><br>';
+        $content .= !empty($negativeComments) ? $negativeComments : 'No areas for improvement mentioned.';
+        $content .= '</div>';
+        $content .= '</div>';
 
-            // POSITIVE FEEDBACK - Full width
-            if (!empty($positiveComments)) {
-                $pdf->SetFont('helvetica', 'B', 9);
-                $pdf->SetFillColor(200, 230, 200);
-                $pdf->Cell(0, 7, 'POSITIVE FEEDBACK', 1, 1, 'L', true);
-                
-                $pdf->SetFont('helvetica', '', 8);
-                $pdf->MultiCell(0, 5, $positiveComments, 1, 'L', false, 1);
-            } else {
-                $pdf->SetFont('helvetica', 'B', 9);
-                $pdf->SetFillColor(200, 230, 200);
-                $pdf->Cell(0, 7, 'POSITIVE FEEDBACK', 1, 1, 'L', true);
-                
-                $pdf->SetFont('helvetica', 'I', 8);
-                $pdf->Cell(0, 6, 'No positive feedback provided.', 1, 1, 'C');
-            }
-            
-            $pdf->Ln(2);
-            
-            // AREAS FOR IMPROVEMENT - Full width
-            if (!empty($negativeComments)) {
-                $pdf->SetFont('helvetica', 'B', 9);
-                $pdf->SetFillColor(255, 200, 200);
-                $pdf->Cell(0, 7, 'AREAS FOR IMPROVEMENT', 1, 1, 'L', true);
-                
-                $pdf->SetFont('helvetica', '', 8);
-                $pdf->MultiCell(0, 5, $negativeComments, 1, 'L', false, 1);
-            } else {
-                $pdf->SetFont('helvetica', 'B', 9);
-                $pdf->SetFillColor(255, 200, 200);
-                $pdf->Cell(0, 7, 'AREAS FOR IMPROVEMENT', 1, 1, 'L', true);
-                
-                $pdf->SetFont('helvetica', 'I', 8);
-                $pdf->Cell(0, 6, 'No areas for improvement mentioned.', 1, 1, 'C');
-            }
-            
-        } else {
-            $pdf->SetFont('helvetica', 'B', 10);
-            $pdf->Cell(0, 6, 'STUDENT COMMENTS:', 0, 1);
-            $pdf->SetFont('helvetica', '', 9);
-            $pdf->Cell(0, 6, 'No comments provided by student.', 0, 1, 'C');
-        }
-
-        $pdf->Output($outputPath, 'F');
-        return ['success' => true, 'image_errors' => $imageErrors];
+        // Create Word document
+        createWordDocument($content, $outputPath);
+        
+        return ['success' => true];
 
     } catch (Exception $e) {
         error_log("Error generating individual report: " . $e->getMessage());
-        return ['success' => false, 'image_errors' => $imageErrors];
+        return ['success' => false];
     }
 }
 
 function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
-    $imageErrors = [];
-    
     try {
         $stmt = $pdo->prepare("
             SELECT * FROM evaluations 
@@ -615,7 +484,7 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
         $evaluations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($evaluations)) {
-            return ['success' => false, 'image_errors' => $imageErrors];
+            return ['success' => false];
         }
 
         $sections = array_unique(array_column($evaluations, 'section'));
@@ -624,7 +493,7 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
 
         $totalStudents = count($evaluations);
         
-        // Calculate average scores for each question WITHOUT rounding
+        // Calculate average scores for each question
         $questions = [
             'q1_1' => ['sum' => 0, 'label' => 'Analyzes and explains lessons without reading from the book in class'],
             'q1_2' => ['sum' => 0, 'label' => 'Uses audio-visual and devices to support teaching'],
@@ -661,7 +530,7 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
             $questions[$key]['avg'] = $data['sum'] / $totalStudents;
         }
 
-        // Calculate category averages for cover page WITHOUT rounding
+        // Calculate category averages
         $teachingScore = ($questions['q1_1']['avg'] + $questions['q1_2']['avg'] + $questions['q1_3']['avg'] + 
                          $questions['q1_4']['avg'] + $questions['q1_5']['avg'] + $questions['q1_6']['avg']) / 6;
         
@@ -676,118 +545,51 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
         
         $overallScore = ($teachingScore + $managementScore + $guidanceScore + $personalScore) / 4;
 
-        $pdf = new EvaluationPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-
-        $pdf->SetCreator(PDF_CREATOR);
-        $pdf->SetAuthor('Teacher Evaluation System');
-        $pdf->SetTitle("Summary Report - $teacherName - $program");
-
-        // Set margins for cover page
-        $pdf->SetMargins(10, 40, 10);
-        $pdf->SetHeaderMargin(10);
-        $pdf->SetFooterMargin(10);
-        $pdf->SetAutoPageBreak(TRUE, 15);
+        // Start building HTML content
+        $content = getCoverPageHTML($teacherName, $program, $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore);
         
-        // Increase cell height ratio for better text display
-        $pdf->setCellHeightRatio(1.5);
+        // Summary info
+        $content .= '
+        <h2>Summary Report - Detailed Results</h2>
+        <div class="stat-box">
+            <p><strong>Teacher:</strong> ' . strtoupper($teacherName) . '</p>
+            <p><strong>Program:</strong> ' . $program . ' (ALL SECTIONS)</p>
+            <p><strong>Sections Included:</strong> ' . $sectionsText . '</p>
+            <p><strong>Total Students Evaluated:</strong> ' . $totalStudents . '</p>
+        </div>';
 
-        // Add cover page with evaluation results (decimal scores)
-        $pdf->AddEvaluationCoverPage($teacherName, $program, $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore);
+        // Detailed criteria table
+        $categories = [
+            'TEACHING COMPETENCE' => ['q1_1', 'q1_2', 'q1_3', 'q1_4', 'q1_5', 'q1_6'],
+            'MANAGEMENT SKILLS' => ['q2_1', 'q2_2', 'q2_3', 'q2_4'],
+            'GUIDANCE SKILLS' => ['q3_1', 'q3_2', 'q3_3', 'q3_4'],
+            'PERSONAL AND SOCIAL ATTRIBUTES' => ['q4_1', 'q4_2', 'q4_3', 'q4_4', 'q4_5', 'q4_6']
+        ];
 
-        // Collect image errors
-        $imageErrors = $pdf->getImageErrors();
-
-        // Start detailed content on page 2
-        $pdf->AddPage();
-        
-        // Reset margins for detailed content
-        $pdf->SetMargins(10, 20, 10);
-
-        $pdf->SetFont('helvetica', 'B', 12);
-        $pdf->Cell(0, 6, "Name: " . strtoupper($teacherName), 0, 1);
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 5, "Program: $program (ALL SECTIONS)", 0, 1);
-        $pdf->Cell(0, 5, "Sections Included: $sectionsText", 0, 1);
-        $pdf->Cell(0, 5, "Total Students Evaluated: $totalStudents", 0, 1);
-        $pdf->Ln(5);
-
-        // Detailed criteria table with adjusted column widths
-        $pdf->SetFillColor(200, 200, 200);
-        $pdf->SetFont('helvetica', 'B', 9);
-        
-        $pdf->SetFillColor(220, 220, 220);
-        $pdf->Cell(10, 7, '', 1, 0, 'C', true);
-        $pdf->Cell(135, 7, 'TEACHING COMPETENCE', 1, 0, 'L', true);
-        $pdf->Cell(45, 7, 'SCORE', 1, 1, 'C', true);
-
-        $pdf->SetFont('helvetica', '', 8);
-        $counter = 1;
-        foreach (['q1_1', 'q1_2', 'q1_3', 'q1_4', 'q1_5', 'q1_6'] as $q) {
-            $pdf->Cell(10, 6, '1.' . $counter, 1, 0, 'C');
-            $pdf->MultiCell(135, 6, $questions[$q]['label'], 1, 'L');
-            $pdf->SetXY($pdf->GetX() + 145, $pdf->GetY() - 6);
-            $pdf->Cell(45, 6, number_format($questions[$q]['avg'], 2), 1, 1, 'C');
-            $counter++;
+        $categoryNum = 1;
+        foreach ($categories as $categoryName => $questionKeys) {
+            $content .= '<h3>' . $categoryName . '</h3>';
+            $content .= '<table>';
+            $content .= '<tr><th style="width: 10%">No.</th><th style="width: 70%">Criteria</th><th style="width: 20%">Average Score</th></tr>';
+            
+            $qNum = 1;
+            foreach ($questionKeys as $key) {
+                $content .= '<tr>';
+                $content .= '<td>' . $categoryNum . '.' . $qNum . '</td>';
+                $content .= '<td>' . $questions[$key]['label'] . '</td>';
+                $content .= '<td style="text-align: center">' . number_format($questions[$key]['avg'], 2) . '</td>';
+                $content .= '</tr>';
+                $qNum++;
+            }
+            $content .= '</table><br>';
+            $categoryNum++;
         }
 
-        $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->SetFillColor(220, 220, 220);
-        $pdf->Cell(10, 7, '', 1, 0, 'C', true);
-        $pdf->Cell(135, 7, 'MANAGEMENT SKILLS', 1, 0, 'L', true);
-        $pdf->Cell(45, 7, '', 1, 1, 'C', true);
+        $content .= '<table style="background: #ffe6cc;">';
+        $content .= '<tr><th style="width: 80%">OVERALL AVERAGE</th><th style="width: 20%">' . number_format($overallScore, 2) . '</th></tr>';
+        $content .= '</table><br>';
 
-        $pdf->SetFont('helvetica', '', 8);
-        $counter = 1;
-        foreach (['q2_1', 'q2_2', 'q2_3', 'q2_4'] as $q) {
-            $pdf->Cell(10, 6, '2.' . $counter, 1, 0, 'C');
-            $pdf->MultiCell(135, 6, $questions[$q]['label'], 1, 'L');
-            $pdf->SetXY($pdf->GetX() + 145, $pdf->GetY() - 6);
-            $pdf->Cell(45, 6, number_format($questions[$q]['avg'], 2), 1, 1, 'C');
-            $counter++;
-        }
-
-        $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->SetFillColor(220, 220, 220);
-        $pdf->Cell(10, 7, '', 1, 0, 'C', true);
-        $pdf->Cell(135, 7, 'GUIDANCE SKILLS', 1, 0, 'L', true);
-        $pdf->Cell(45, 7, '', 1, 1, 'C', true);
-
-        $pdf->SetFont('helvetica', '', 8);
-        $counter = 1;
-        foreach (['q3_1', 'q3_2', 'q3_3', 'q3_4'] as $q) {
-            $pdf->Cell(10, 6, '3.' . $counter, 1, 0, 'C');
-            $pdf->MultiCell(135, 6, $questions[$q]['label'], 1, 'L');
-            $pdf->SetXY($pdf->GetX() + 145, $pdf->GetY() - 6);
-            $pdf->Cell(45, 6, number_format($questions[$q]['avg'], 2), 1, 1, 'C');
-            $counter++;
-        }
-
-        $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->SetFillColor(220, 220, 220);
-        $pdf->Cell(10, 7, '', 1, 0, 'C', true);
-        $pdf->Cell(135, 7, 'PERSONAL AND SOCIAL ATTRIBUTES', 1, 0, 'L', true);
-        $pdf->Cell(45, 7, '', 1, 1, 'C', true);
-
-        $pdf->SetFont('helvetica', '', 8);
-        $counter = 1;
-        foreach (['q4_1', 'q4_2', 'q4_3', 'q4_4', 'q4_5', 'q4_6'] as $q) {
-            $pdf->Cell(10, 6, '4.' . $counter, 1, 0, 'C');
-            $pdf->MultiCell(135, 6, $questions[$q]['label'], 1, 'L');
-            $pdf->SetXY($pdf->GetX() + 145, $pdf->GetY() - 6);
-            $pdf->Cell(45, 6, number_format($questions[$q]['avg'], 2), 1, 1, 'C');
-            $counter++;
-        }
-
-        $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->SetFillColor(255, 200, 150);
-        $pdf->Cell(145, 8, 'OVERALL AVERAGE', 1, 0, 'R', true);
-        $pdf->Cell(45, 8, number_format($overallScore, 2), 1, 1, 'C', true);
-
-        $pdf->Ln(5);
-
-        // COMMENTS SECTION - FULL WIDTH, NO TRUNCATION
-        
-        // Collect all comments
+        // COMMENTS SECTION
         $allPositiveComments = [];
         $allNegativeComments = [];
 
@@ -804,102 +606,54 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
             }
         }
 
-        // Display comments if there are any
         if (!empty($allPositiveComments) || !empty($allNegativeComments)) {
-            // Check if we need a new page
-            if ($pdf->GetY() > 210) {
-                $pdf->AddPage();
-            }
+            $content .= '<div class="comments-section">';
+            $content .= '<h3>STUDENT COMMENTS SUMMARY</h3>';
             
-            $pdf->SetFont('helvetica', 'B', 11);
-            $pdf->Cell(0, 8, 'STUDENT COMMENTS SUMMARY:', 0, 1, 'L');
-            $pdf->Ln(3);
-
             // Statistics
-            $totalWithPositive = count($allPositiveComments);
-            $totalWithNegative = count($allNegativeComments);
-            
-            $pdf->SetFont('helvetica', 'B', 9);
-            $pdf->Cell(0, 6, 'Statistics:', 0, 1);
-            $pdf->SetFont('helvetica', '', 9);
-            $pdf->Cell(0, 5, "• Total Evaluations: {$totalStudents}", 0, 1);
-            $pdf->Cell(0, 5, "• With Positive Comments: {$totalWithPositive}", 0, 1);
-            $pdf->Cell(0, 5, "• With Areas for Improvement: {$totalWithNegative}", 0, 1);
-            $pdf->Ln(5);
+            $content .= '<div class="stat-box">';
+            $content .= '<p><strong>Statistics:</strong></p>';
+            $content .= '<p>• Total Evaluations: ' . $totalStudents . '</p>';
+            $content .= '<p>• With Positive Comments: ' . count($allPositiveComments) . '</p>';
+            $content .= '<p>• With Areas for Improvement: ' . count($allNegativeComments) . '</p>';
+            $content .= '</div>';
 
-            // ALL POSITIVE FEEDBACK
+            // Positive feedback
             if (!empty($allPositiveComments)) {
-                if ($pdf->GetY() > 240) {
-                    $pdf->AddPage();
-                }
-                
-                $pdf->SetFont('helvetica', 'B', 10);
-                $pdf->SetFillColor(200, 230, 200);
-                $pdf->Cell(0, 8, 'ALL POSITIVE FEEDBACK COMMENTS', 1, 1, 'C', true);
-                
-                $pdf->SetFont('helvetica', '', 9);
-                
+                $content .= '<h4>ALL POSITIVE FEEDBACK COMMENTS</h4>';
                 $commentNum = 1;
                 foreach ($allPositiveComments as $comment) {
-                    // Check page space before each comment
-                    if ($pdf->GetY() > 260) {
-                        $pdf->AddPage();
-                        $pdf->SetFont('helvetica', 'B', 10);
-                        $pdf->SetFillColor(200, 230, 200);
-                        $pdf->Cell(0, 8, 'POSITIVE FEEDBACK (continued)', 1, 1, 'C', true);
-                        $pdf->SetFont('helvetica', '', 9);
-                    }
-                    
-                    // Display full comment with number - NO TRUNCATION
-                    $pdf->MultiCell(0, 6, "{$commentNum}. {$comment}", 1, 'L', false, 1);
+                    $content .= '<div class="positive-comment">';
+                    $content .= '<strong>' . $commentNum . '.</strong> ' . $comment;
+                    $content .= '</div>';
                     $commentNum++;
                 }
-                
-                $pdf->Ln(5);
             }
-            
-            // ALL AREAS FOR IMPROVEMENT
+
+            // Areas for improvement
             if (!empty($allNegativeComments)) {
-                if ($pdf->GetY() > 240) {
-                    $pdf->AddPage();
-                }
-                
-                $pdf->SetFont('helvetica', 'B', 10);
-                $pdf->SetFillColor(255, 200, 200);
-                $pdf->Cell(0, 8, 'ALL AREAS FOR IMPROVEMENT COMMENTS', 1, 1, 'C', true);
-                
-                $pdf->SetFont('helvetica', '', 9);
-                
+                $content .= '<h4>ALL AREAS FOR IMPROVEMENT COMMENTS</h4>';
                 $commentNum = 1;
                 foreach ($allNegativeComments as $comment) {
-                    // Check page space before each comment
-                    if ($pdf->GetY() > 260) {
-                        $pdf->AddPage();
-                        $pdf->SetFont('helvetica', 'B', 10);
-                        $pdf->SetFillColor(255, 200, 200);
-                        $pdf->Cell(0, 8, 'AREAS FOR IMPROVEMENT (continued)', 1, 1, 'C', true);
-                        $pdf->SetFont('helvetica', '', 9);
-                    }
-                    
-                    // Display full comment with number - NO TRUNCATION
-                    $pdf->MultiCell(0, 6, "{$commentNum}. {$comment}", 1, 'L', false, 1);
+                    $content .= '<div class="negative-comment">';
+                    $content .= '<strong>' . $commentNum . '.</strong> ' . $comment;
+                    $content .= '</div>';
                     $commentNum++;
                 }
             }
-            
+            $content .= '</div>';
         } else {
-            $pdf->SetFont('helvetica', 'B', 11);
-            $pdf->Cell(0, 8, 'STUDENT COMMENTS SUMMARY:', 0, 1);
-            $pdf->SetFont('helvetica', '', 9);
-            $pdf->Cell(0, 8, 'No comments provided by students.', 0, 1, 'C');
+            $content .= '<p><em>No comments provided by students.</em></p>';
         }
 
-        $pdf->Output($outputPath, 'F');
-        return ['success' => true, 'image_errors' => $imageErrors];
+        // Create Word document
+        createWordDocument($content, $outputPath);
+        
+        return ['success' => true];
 
     } catch (Exception $e) {
         error_log("Error generating summary report: " . $e->getMessage());
-        return ['success' => false, 'image_errors' => $imageErrors];
+        return ['success' => false];
     }
 }
 ?>
