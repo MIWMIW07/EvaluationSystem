@@ -479,7 +479,7 @@ function formatBytes($bytes) {
 
     <div class="container">
         <div class="header">
-            <h1>📥 Download Summary Reports</h1>
+            <h1>Download Summary Reports</h1>
             <div class="header-actions">
                 <a href="admin.php" class="btn btn-primary">← Back to Dashboard</a>
                 <button id="refreshBtn" class="btn btn-refresh" onclick="refreshReports()">
@@ -776,4 +776,3 @@ function formatBytes($bytes) {
     </script>
 </body>
 </html>
-[file content end]
