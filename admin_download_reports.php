@@ -19,7 +19,7 @@ function getReportsData() {
     $reportsDir = __DIR__ . '/reports/';
     $teachers = [];
     
-    // Get teacher folders with their PDFs - ONLY SUMMARY REPORTS
+    // Get teacher folders with their Word documents - ONLY SUMMARY REPORTS
     $teacherReportsPath = $reportsDir . 'Teacher Evaluation Reports/Reports/';
     if (is_dir($teacherReportsPath)) {
         $teacherFolders = scandir($teacherReportsPath);
@@ -38,23 +38,29 @@ function getReportsData() {
                 $programPath = $teacherPath . $program . '/';
                 if (!is_dir($programPath)) continue;
                 
-                $pdfs = [];
-                $pdfFiles = scandir($programPath);
+                $documents = [];
+                $docFiles = scandir($programPath);
                 
-                foreach ($pdfFiles as $pdf) {
-                    // Only include SUMMARY reports, exclude individual student reports
-                    if (pathinfo($pdf, PATHINFO_EXTENSION) === 'pdf' && 
-                        stripos($pdf, 'summary') !== false) {
-                        $pdfs[] = [
-                            'name' => $pdf,
-                            'path' => 'reports/Teacher Evaluation Reports/Reports/' . $teacherName . '/' . $program . '/' . $pdf,
-                            'size' => filesize($programPath . $pdf)
-                        ];
+                foreach ($docFiles as $doc) {
+                    $extension = pathinfo($doc, PATHINFO_EXTENSION);
+                    // Include Word documents (doc, docx) - ONLY SUMMARY reports
+                    if (in_array(strtolower($extension), ['doc', 'docx']) && 
+                        stripos($doc, 'summary') !== false) {
+                        
+                        $filePath = $programPath . $doc;
+                        if (file_exists($filePath)) {
+                            $documents[] = [
+                                'name' => $doc,
+                                'path' => 'reports/Teacher Evaluation Reports/Reports/' . $teacherName . '/' . $program . '/' . $doc,
+                                'size' => filesize($filePath),
+                                'type' => strtoupper($extension)
+                            ];
+                        }
                     }
                 }
                 
-                if (!empty($pdfs)) {
-                    $programs[$program] = $pdfs;
+                if (!empty($documents)) {
+                    $programs[$program] = $documents;
                 }
             }
             
@@ -64,17 +70,17 @@ function getReportsData() {
         }
     }
     
-    // Count total PDFs
-    $totalPDFs = 0;
+    // Count total documents
+    $totalDocs = 0;
     foreach ($teachers as $programs) {
-        foreach ($programs as $pdfs) {
-            $totalPDFs += count($pdfs);
+        foreach ($programs as $docs) {
+            $totalDocs += count($docs);
         }
     }
     
     return [
         'teachers' => $teachers,
-        'totalPDFs' => $totalPDFs,
+        'totalDocs' => $totalDocs,
         'teacherCount' => count($teachers),
         'timestamp' => time()
     ];
@@ -82,7 +88,7 @@ function getReportsData() {
 
 $data = getReportsData();
 $teachers = $data['teachers'];
-$totalPDFs = $data['totalPDFs'];
+$totalDocs = $data['totalDocs'];
 
 function formatBytes($bytes) {
     if ($bytes >= 1073741824) {
@@ -93,6 +99,16 @@ function formatBytes($bytes) {
         return number_format($bytes / 1024, 2) . ' KB';
     } else {
         return $bytes . ' bytes';
+    }
+}
+
+function getFileIcon($type) {
+    switch(strtolower($type)) {
+        case 'doc':
+        case 'docx':
+            return '📝';
+        default:
+            return '📄';
     }
 }
 ?>
@@ -112,7 +128,7 @@ function formatBytes($bytes) {
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #800000 0%, #A52A2A 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -131,7 +147,7 @@ function formatBytes($bytes) {
         }
 
         .header h1 {
-            color: #333;
+            color: #800000;
             margin-bottom: 10px;
         }
 
@@ -162,11 +178,11 @@ function formatBytes($bytes) {
         }
 
         .btn-primary {
-            background: #667eea;
+            background: #800000;
         }
 
         .btn-primary:hover:not(:disabled) {
-            background: #5568d3;
+            background: #660000;
         }
 
         .btn-refresh {
@@ -223,7 +239,7 @@ function formatBytes($bytes) {
         .stat-number {
             font-size: 2.5em;
             font-weight: bold;
-            color: #667eea;
+            color: #800000;
         }
 
         .stat-label {
@@ -240,15 +256,15 @@ function formatBytes($bytes) {
         }
 
         .section h2 {
-            color: #333;
+            color: #800000;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #800000;
         }
 
         .teacher-section {
             margin-bottom: 20px;
-            border: 2px solid #667eea;
+            border: 2px solid #800000;
             border-radius: 8px;
             overflow: hidden;
             transition: opacity 0.3s;
@@ -260,7 +276,7 @@ function formatBytes($bytes) {
         }
 
         .teacher-header {
-            background: #667eea;
+            background: #800000;
             color: white;
             padding: 15px;
             font-weight: bold;
@@ -272,7 +288,7 @@ function formatBytes($bytes) {
         }
 
         .teacher-header:hover {
-            background: #5568d3;
+            background: #660000;
         }
 
         .teacher-content {
@@ -289,7 +305,7 @@ function formatBytes($bytes) {
 
         .program-title {
             font-weight: bold;
-            color: #667eea;
+            color: #800000;
             margin-bottom: 10px;
             font-size: 1.05em;
             display: flex;
@@ -297,11 +313,11 @@ function formatBytes($bytes) {
             gap: 8px;
         }
 
-        .pdf-list {
+        .doc-list {
             list-style: none;
         }
 
-        .pdf-item {
+        .doc-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -309,21 +325,21 @@ function formatBytes($bytes) {
             border-bottom: 1px solid #e0e0e0;
         }
 
-        .pdf-item:last-child {
+        .doc-item:last-child {
             border-bottom: none;
         }
 
-        .pdf-info {
+        .doc-info {
             flex: 1;
         }
 
-        .pdf-name {
+        .doc-name {
             color: #333;
             font-weight: 500;
             margin-bottom: 3px;
         }
 
-        .pdf-size {
+        .doc-size {
             font-size: 0.85em;
             color: #666;
         }
@@ -415,6 +431,11 @@ function formatBytes($bytes) {
             color: white;
         }
 
+        .badge-word {
+            background: #2b5797;
+            color: white;
+        }
+
         .last-updated {
             font-size: 0.85em;
             color: #666;
@@ -472,6 +493,15 @@ function formatBytes($bytes) {
             font-size: 0.75em;
             margin-left: 8px;
         }
+        
+        .doc-badge {
+            background: #2b5797;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -479,9 +509,10 @@ function formatBytes($bytes) {
 
     <div class="container">
         <div class="header">
-            <h1>Download Summary Reports</h1>
+            <h1>Download Summary Reports (Word Documents)</h1>
             <div class="header-actions">
                 <a href="admin.php" class="btn btn-primary">← Back to Dashboard</a>
+                <a href="admin_generate_reports.php" class="btn" style="background: #17a2b8;">📊 Generate New Reports</a>
                 <button id="refreshBtn" class="btn btn-refresh" onclick="refreshReports()">
                     <span id="refreshIcon">🔄</span>
                     <span id="refreshText">Refresh Reports</span>
@@ -498,9 +529,9 @@ function formatBytes($bytes) {
                 <div class="stat-number" id="teacherCount"><?php echo count($teachers); ?></div>
                 <div class="stat-label">Teachers</div>
             </div>
-            <div class="stat-card" id="pdfStat">
-                <div class="stat-number" id="pdfCount"><?php echo $totalPDFs; ?></div>
-                <div class="stat-label">Summary PDF Reports</div>
+            <div class="stat-card" id="docStat">
+                <div class="stat-number" id="docCount"><?php echo $totalDocs; ?></div>
+                <div class="stat-label">Summary Word Reports</div>
             </div>
         </div>
 
@@ -510,11 +541,12 @@ function formatBytes($bytes) {
                 <div class="empty-state">
                     <h3>📄 No Summary Reports Available</h3>
                     <p>Generate summary reports first from the admin dashboard.</p>
+                    <a href="admin_generate_reports.php" class="btn" style="background: #800000; color: white; margin-top: 15px; display: inline-block;">Generate Reports Now</a>
                 </div>
             </div>
             <?php else: ?>
             <div class="section">
-                <h2>👥 Teacher Summary Reports</h2>
+                <h2>👥 Teacher Summary Reports (Word Format)</h2>
                 <div class="alert alert-info">
                     <strong>ℹ️ Note:</strong> Only summary reports are shown. Individual student reports have been excluded. Click on a teacher's name to view and download their summary reports by program.
                 </div>
@@ -523,28 +555,29 @@ function formatBytes($bytes) {
                     <?php foreach ($teachers as $teacherName => $programs): ?>
                     <div class="teacher-section" data-teacher="<?php echo htmlspecialchars($teacherName); ?>">
                         <div class="teacher-header" onclick="toggleTeacher(this)">
-                            <span>📚 <?php echo htmlspecialchars($teacherName); ?></span>
+                            <span>👨‍🏫 <?php echo htmlspecialchars($teacherName); ?></span>
                             <span class="toggle-icon">▼</span>
                         </div>
                         <div class="teacher-content hidden">
-                            <?php foreach ($programs as $programName => $pdfs): ?>
+                            <?php foreach ($programs as $programName => $docs): ?>
                             <div class="program-section">
                                 <div class="program-title">
-                                    📖 <?php echo htmlspecialchars($programName); ?>
-                                    <span class="badge badge-blue"><?php echo count($pdfs); ?> summary report<?php echo count($pdfs) > 1 ? 's' : ''; ?></span>
+                                    📚 <?php echo htmlspecialchars($programName); ?>
+                                    <span class="badge badge-word"><?php echo count($docs); ?> document<?php echo count($docs) > 1 ? 's' : ''; ?></span>
                                 </div>
-                                <ul class="pdf-list">
-                                    <?php foreach ($pdfs as $pdf): ?>
-                                    <li class="pdf-item">
-                                        <div class="pdf-info">
-                                            <div class="pdf-name">
-                                                📊 <?php echo htmlspecialchars($pdf['name']); ?>
+                                <ul class="doc-list">
+                                    <?php foreach ($docs as $doc): ?>
+                                    <li class="doc-item">
+                                        <div class="doc-info">
+                                            <div class="doc-name">
+                                                <?php echo getFileIcon($doc['type']); ?> <?php echo htmlspecialchars($doc['name']); ?>
                                                 <span class="summary-badge">SUMMARY</span>
+                                                <span class="doc-badge"><?php echo $doc['type']; ?></span>
                                             </div>
-                                            <div class="pdf-size"><?php echo formatBytes($pdf['size']); ?></div>
+                                            <div class="doc-size"><?php echo formatBytes($doc['size']); ?></div>
                                         </div>
-                                        <a href="<?php echo htmlspecialchars($pdf['path']); ?>" class="download-btn" download>
-                                            ⬇ Download PDF
+                                        <a href="<?php echo htmlspecialchars($doc['path']); ?>" class="download-btn" download>
+                                            ⬇ Download Word
                                         </a>
                                     </li>
                                     <?php endforeach; ?>
@@ -636,22 +669,22 @@ function formatBytes($bytes) {
             
             // Check if there are changes
             const currentTeacherCount = parseInt(document.getElementById('teacherCount').textContent);
-            const currentPdfCount = parseInt(document.getElementById('pdfCount').textContent);
+            const currentDocCount = parseInt(document.getElementById('docCount').textContent);
             
             const hasChanges = currentTeacherCount !== data.teacherCount || 
-                              currentPdfCount !== data.totalPDFs;
+                              currentDocCount !== data.totalDocs;
             
             // Update statistics with animation
             if (hasChanges) {
                 document.getElementById('teacherStat').classList.add('updating');
-                document.getElementById('pdfStat').classList.add('updating');
+                document.getElementById('docStat').classList.add('updating');
                 
                 setTimeout(() => {
                     document.getElementById('teacherCount').textContent = data.teacherCount;
-                    document.getElementById('pdfCount').textContent = data.totalPDFs;
+                    document.getElementById('docCount').textContent = data.totalDocs;
                     
                     document.getElementById('teacherStat').classList.remove('updating');
-                    document.getElementById('pdfStat').classList.remove('updating');
+                    document.getElementById('docStat').classList.remove('updating');
                 }, 250);
             }
             
@@ -692,6 +725,7 @@ function formatBytes($bytes) {
                     <div class="empty-state">
                         <h3>📄 No Summary Reports Available</h3>
                         <p>Generate summary reports first from the admin dashboard.</p>
+                        <a href="admin_generate_reports.php" class="btn" style="background: #800000; color: white; margin-top: 15px; display: inline-block;">Generate Reports Now</a>
                     </div>
                 </div>
             `;
@@ -700,7 +734,7 @@ function formatBytes($bytes) {
         
         let html = `
             <div class="section">
-                <h2>👥 Teacher Summary Reports</h2>
+                <h2>👥 Teacher Summary Reports (Word Format)</h2>
                 <div class="alert alert-info">
                     <strong>ℹ️ Note:</strong> Only summary reports are shown. Individual student reports have been excluded. Click on a teacher's name to view and download their summary reports by program.
                 </div>
@@ -715,34 +749,36 @@ function formatBytes($bytes) {
             html += `
                 <div class="teacher-section ${collapsedClass}" data-teacher="${escapeHtml(teacherName)}">
                     <div class="teacher-header" onclick="toggleTeacher(this)">
-                        <span>📚 ${escapeHtml(teacherName)}</span>
+                        <span>👨‍🏫 ${escapeHtml(teacherName)}</span>
                         <span class="toggle-icon">▼</span>
                     </div>
                     <div class="teacher-content ${hiddenClass}">
             `;
             
-            for (const [programName, pdfs] of Object.entries(programs)) {
+            for (const [programName, docs] of Object.entries(programs)) {
                 html += `
                     <div class="program-section">
                         <div class="program-title">
-                            📖 ${escapeHtml(programName)}
-                            <span class="badge badge-blue">${pdfs.length} summary report${pdfs.length > 1 ? 's' : ''}</span>
+                            📚 ${escapeHtml(programName)}
+                            <span class="badge badge-word">${docs.length} document${docs.length > 1 ? 's' : ''}</span>
                         </div>
-                        <ul class="pdf-list">
+                        <ul class="doc-list">
                 `;
                 
-                pdfs.forEach(pdf => {
+                docs.forEach(doc => {
+                    const icon = doc.type.toLowerCase() === 'docx' || doc.type.toLowerCase() === 'doc' ? '📝' : '📄';
                     html += `
-                        <li class="pdf-item">
-                            <div class="pdf-info">
-                                <div class="pdf-name">
-                                    📊 ${escapeHtml(pdf.name)}
+                        <li class="doc-item">
+                            <div class="doc-info">
+                                <div class="doc-name">
+                                    ${icon} ${escapeHtml(doc.name)}
                                     <span class="summary-badge">SUMMARY</span>
+                                    <span class="doc-badge">${escapeHtml(doc.type)}</span>
                                 </div>
-                                <div class="pdf-size">${formatBytes(pdf.size)}</div>
+                                <div class="doc-size">${formatBytes(doc.size)}</div>
                             </div>
-                            <a href="${escapeHtml(pdf.path)}" class="download-btn" download>
-                                ⬇ Download PDF
+                            <a href="${escapeHtml(doc.path)}" class="download-btn" download>
+                                ⬇ Download Word
                             </a>
                         </li>
                     `;
