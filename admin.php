@@ -1680,8 +1680,6 @@ ob_end_clean(); // Clean the output buffer
                 html += `<p><strong>Individual Reports:</strong> ${data.individual_reports}</p>`;
                 html += `<p><strong>Summary Reports:</strong> ${data.summary_reports}</p>`;
                 html += `<p><strong>Total Files:</strong> ${data.total_files}</p>`;
-                html += `<p><strong>Reports Location:</strong> ${data.reports_location}</p>`;
-                html += `<p><a href="admin_download_reports.php" class="btn btn-success"><i class="fas fa-download"></i> View & Download Reports</a></p>`;
                 html += `</div>`;
                 resultDiv.innerHTML = html;
             } else {
