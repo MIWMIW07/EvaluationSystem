@@ -314,7 +314,7 @@ function getCoverPageHTML($teacherName, $program, $teachingScore, $managementSco
             ' . $logoHtml . '
             <div>
                 <div class="school-name">PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.</div>
-                <div style="font-size: 12pt; color: #666;">GMA-BRANCH (1ST Semester 2025-2026)</div>
+                <div style="font-size: 12pt; color: #666;">GMA-BRANCH (2ND Semester 2025-2026)</div>
             </div>
         </div>
         <hr style="margin: 20px 0; border: 1px solid #800000;">
