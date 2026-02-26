@@ -163,7 +163,6 @@ ob_end_clean();
             <h3>🐛 System Diagnostics</h3>
             <p>Run diagnostics to identify and fix system issues:</p>
             <button class="btn btn-warning" onclick="runSystemDiagnostics()">Run System Diagnostics</button>
-            <button class="btn btn-info" onclick="checkDatabaseData()">Check Database Data</button>
             <div id="diagnosticsResult"></div>
         </div>
     </div>
