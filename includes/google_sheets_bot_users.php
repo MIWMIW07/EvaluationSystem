@@ -6,32 +6,37 @@ function getBotUsersFromSheets() {
     try {
         $client = new Google_Client();
         $client->setAuthConfig(__DIR__ . '/../credentials.json');
-        $client->addScope(Google_Service_Sheets::SPREADSHEETS);
+        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
         
         $service = new Google_Service_Sheets($client);
+        $spreadsheetId = getenv("GOOGLE_SHEETS_ID") ?: ($_ENV["GOOGLE_SHEETS_ID"] ?? $_SERVER["GOOGLE_SHEETS_ID"] ?? null);
         
-        // Use the SAME spreadsheet ID as your student evaluation
-        $spreadsheetId = '1cFkTmh_1DUX4lb6VLK-EJjw5hlB9zvnYK8W__rTML-I';
+        if (!$spreadsheetId) {
+            error_log("Google Sheets ID not set");
+            return [];
+        }
         
-        // Get from the new "BOT_Users" sheet
-        $range = 'BOT_Users!A2:D'; // Get all rows starting from row 2
+        // Get data from BOT_Users sheet, starting from row 2 (skip headers)
+        $range = 'BOT_Users!A2:D';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
         
         $users = [];
         if (!empty($values)) {
             foreach ($values as $row) {
-                if (count($row) >= 4 && !empty($row[2])) { // username is required
+                // Make sure we have all 4 columns with data
+                if (count($row) >= 4 && !empty(trim($row[2] ?? ''))) { // username is required
                     $users[] = [
-                        'bot_id' => $row[0] ?? '',
-                        'full_name' => $row[1] ?? '',
-                        'username' => $row[2],
-                        'password' => $row[3] ?? ''
+                        'bot_id' => trim($row[0] ?? ''),
+                        'full_name' => trim($row[1] ?? ''),
+                        'username' => trim($row[2]),
+                        'password' => trim($row[3] ?? '')
                     ];
                 }
             }
         }
         
+        error_log("getBotUsersFromSheets found " . count($users) . " users");
         return $users;
         
     } catch (Exception $e) {
@@ -44,6 +49,7 @@ function syncBotUsersToDatabase($pdo) {
     $users = getBotUsersFromSheets();
     
     if (empty($users)) {
+        error_log("syncBotUsersToDatabase: No users found from Google Sheets");
         return 0;
     }
     
@@ -65,17 +71,22 @@ function syncBotUsersToDatabase($pdo) {
     
     $count = 0;
     foreach ($users as $user) {
-        // Hash the password before storing
-        $hashedPassword = password_hash($user['password'], PASSWORD_DEFAULT);
-        
-        $insertStmt->execute([
-            $user['username'],
-            $hashedPassword,
-            $user['full_name']
-        ]);
-        $count++;
+        try {
+            // Hash the password before storing
+            $hashedPassword = password_hash($user['password'], PASSWORD_DEFAULT);
+            
+            $insertStmt->execute([
+                $user['username'],
+                $hashedPassword,
+                $user['full_name']
+            ]);
+            $count++;
+        } catch (Exception $e) {
+            error_log("Error inserting user {$user['username']}: " . $e->getMessage());
+        }
     }
     
+    error_log("syncBotUsersToDatabase: Successfully synced $count users");
     return $count;
 }
 ?>
