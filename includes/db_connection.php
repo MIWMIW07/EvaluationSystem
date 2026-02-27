@@ -133,12 +133,6 @@ class HybridDataManager {
         return null;
     }
 
-    public function getTeachers() {
-    // This function is not used in your system
-    // Student evaluation teachers come from teacher_assignments table, not Google Sheets
-    return [];
-}
-
     public function getPDO() {
         return $this->pdo;
     }
