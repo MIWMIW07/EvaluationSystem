@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'bot') {
 }
 
 require_once 'includes/db_connection.php';
-require_once 'includes/google_sheets.php'; // You'll need to create this
+require_once 'includes/google_sheets_bot.php'; // You'll need to create this
 
 $pdo = getPDO();
 
