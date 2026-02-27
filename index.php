@@ -477,6 +477,10 @@ if (isset($_SESSION['user_id'])) {
         </div>
     </div>
 
+    <div style="text-align: center; margin-top: 20px;">
+    <a href="bot_login.php" style="color: #800000; text-decoration: none;">Board of Trustees Login →</a>
+</div>
+
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init({
