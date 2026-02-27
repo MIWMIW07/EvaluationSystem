@@ -1,21 +1,20 @@
 <?php
-// includes/google_sheets_bot.php
+// includes/google_sheets_bot.php - UPDATED for 5-column structure
 require_once __DIR__ . '/../vendor/autoload.php';
 
 function getBotTeachersFromSheets() {
     try {
-        // Use the SAME credentials as your student evaluation
         $client = new Google_Client();
-        $client->setAuthConfig(__DIR__ . '/../credentials.json'); // Path to your existing credentials
+        $client->setAuthConfig(__DIR__ . '/../credentials.json');
         $client->addScope(Google_Service_Sheets::SPREADSHEETS);
         
         $service = new Google_Service_Sheets($client);
         
         // Use the SAME spreadsheet ID as your student evaluation
-        $spreadsheetId = 'YOUR_SPREADSHEET_ID_HERE'; // Same ID you're already using
+        $spreadsheetId = 'YOUR_SPREADSHEET_ID_HERE'; // Replace with your actual ID
         
-        // Specify the NEW sheet name "BOT_Teachers"
-        $range = 'BOT_Teachers!A2:C'; // Get all rows starting from row 2
+        // Get ALL 5 columns: A (teacher_name), B (branch), C (department), D (area_of_specialization), E (subjects_handled)
+        $range = 'BOT_Teachers!A2:E'; 
         
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
@@ -23,11 +22,13 @@ function getBotTeachersFromSheets() {
         $teachers = [];
         if (!empty($values)) {
             foreach ($values as $row) {
-                if (count($row) >= 3 && !empty($row[0])) {
+                if (count($row) >= 4 && !empty($row[0])) { // At least teacher_name exists
                     $teachers[] = [
-                        'teacher_name' => $row[0],
+                        'teacher_name' => $row[0] ?? '',
                         'branch' => $row[1] ?? '',
-                        'area_of_specialization' => $row[2] ?? ''
+                        'department' => $row[2] ?? '',
+                        'area_of_specialization' => $row[3] ?? '',
+                        'subjects_handled' => $row[4] ?? ''
                     ];
                 }
             }
@@ -41,7 +42,6 @@ function getBotTeachersFromSheets() {
     }
 }
 
-// Optional: Function to sync Google Sheets data to database
 function syncBotTeachersToDatabase($pdo) {
     $teachers = getBotTeachersFromSheets();
     
@@ -53,13 +53,14 @@ function syncBotTeachersToDatabase($pdo) {
     $deactivateStmt = $pdo->prepare("UPDATE bot_teachers SET is_active = false");
     $deactivateStmt->execute();
     
-    // Insert or update teachers
+    // Insert or update teachers - UPDATED to include all 5 columns
     $insertStmt = $pdo->prepare("
-        INSERT INTO bot_teachers (teacher_name, branch, area_of_specialization, is_active)
-        VALUES (?, ?, ?, true)
-        ON CONFLICT (teacher_name, branch) 
+        INSERT INTO bot_teachers (teacher_name, branch, department, area_of_specialization, subjects_handled, is_active)
+        VALUES (?, ?, ?, ?, ?, true)
+        ON CONFLICT (teacher_name, branch, department) 
         DO UPDATE SET 
             area_of_specialization = EXCLUDED.area_of_specialization,
+            subjects_handled = EXCLUDED.subjects_handled,
             is_active = true,
             updated_at = CURRENT_TIMESTAMP
     ");
@@ -69,7 +70,9 @@ function syncBotTeachersToDatabase($pdo) {
         $insertStmt->execute([
             $teacher['teacher_name'],
             $teacher['branch'],
-            $teacher['area_of_specialization']
+            $teacher['department'],
+            $teacher['area_of_specialization'],
+            $teacher['subjects_handled']
         ]);
         $count++;
     }
