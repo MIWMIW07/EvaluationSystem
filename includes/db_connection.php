@@ -1,5 +1,5 @@
 <?php
-// includes/db_connection.php - FIXED VERSION
+// includes/db_connection.php - UPDATED with BOT support
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Google\Client;
@@ -16,12 +16,11 @@ class HybridDataManager {
             throw new Exception("DATABASE_URL environment variable not set");
         }
 
-        // FIXED: Better database URL parsing for Render
+        // Parse database URL
         $dbopts = parse_url($dbUrl);
         
-        // Handle cases where port might not be in URL (Render sometimes omits it)
         $host = $dbopts["host"] ?? 'localhost';
-        $port = $dbopts["port"] ?? '5432'; // Default PostgreSQL port
+        $port = $dbopts["port"] ?? '5432';
         $dbname = isset($dbopts["path"]) ? ltrim($dbopts["path"], "/") : 'evaluation_system';
         $username = $dbopts["user"] ?? 'postgres';
         $password = $dbopts["pass"] ?? '';
@@ -54,12 +53,46 @@ class HybridDataManager {
         }
     }
 
-    public function authenticateUser($username, $password) {
+    public function authenticateUser($username, $password, $userType = null) {
+        // Special case for admin
         if ($username === 'GUIDANCE' && $password === 'guidanceservice2025') {
             return ['id' => 'admin', 'type' => 'admin'];
         }
 
-        if ($this->sheetsService) {
+        // Try database first for all user types
+        try {
+            $pdo = $this->getPDO();
+            
+            // Check if users table exists
+            $tableCheck = $pdo->query("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')");
+            if ($tableCheck->fetchColumn()) {
+                $query = "SELECT id, username, password, full_name, user_type, is_active FROM users WHERE username = ?";
+                $params = [$username];
+                
+                if ($userType) {
+                    $query .= " AND user_type = ?";
+                    $params[] = $userType;
+                }
+                
+                $stmt = $pdo->prepare($query);
+                $stmt->execute($params);
+                $user = $stmt->fetch();
+                
+                if ($user && password_verify($password, $user['password']) && $user['is_active']) {
+                    return [
+                        'id' => $user['id'],
+                        'username' => $user['username'],
+                        'full_name' => $user['full_name'],
+                        'type' => $user['user_type']
+                    ];
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Database auth error: " . $e->getMessage());
+        }
+
+        // If not found in database and user type is student, try Google Sheets
+        if ($userType === 'student' && $this->sheetsService) {
             $student = $this->findStudent($username, $password);
             if ($student) {
                 return ['id' => $student['student_id'], 'type' => 'student'];
@@ -141,10 +174,20 @@ function isDatabaseAvailable() {
     } 
 }
 
-function logActivity($action, $details, $status = 'info', $userId = null) {
-    $logMessage = sprintf("[%s] User: %s, Action: %s, Status: %s, Details: %s",
-        date('Y-m-d H:i:s'), $userId ?? 'unknown', $action, $status, $details);
-    error_log($logMessage);
+// Centralized logging function
+function logActivity($username, $userType, $action, $details) {
+    try {
+        $pdo = getPDO();
+        $stmt = $pdo->prepare("
+            INSERT INTO activity_logs (username, user_type, action, details, ip_address) 
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([$username, $userType, $action, $details, $_SERVER['REMOTE_ADDR'] ?? '']);
+        return true;
+    } catch (Exception $e) {
+        error_log("Activity log error: " . $e->getMessage());
+        return false;
+    }
 }
 
 function getTeacherAssignments() {
@@ -404,7 +447,6 @@ function getEmergencyPDO() {
         throw new Exception("DATABASE_URL not set");
     }
     
-    // Simple approach - just replace postgresql:// with pgsql://
     $dsn = str_replace('postgresql://', 'pgsql://', $dbUrl);
     
     return new PDO($dsn, [
