@@ -454,6 +454,113 @@ try {
     echo "<h3>✅ Database Setup Complete!</h3>";
     echo "<p class='success'><strong>Total teacher assignments inserted: {$totalInserted}</strong></p>";
     echo "</div>";
+
+    // ==============================
+    // Add BOT user type to enum if needed
+    // ==============================
+    echo "<p>🔧 Updating user_type enum to include BOT...</p>";
+    try {
+        $pdo->exec("
+            ALTER TYPE user_type_enum ADD VALUE IF NOT EXISTS 'bot';
+        ");
+        echo "<p class='success'>✓ User type enum updated with BOT</p>";
+    } catch (Exception $e) {
+        // If enum doesn't exist yet, create it
+        try {
+            $pdo->exec("
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_type_enum') THEN
+                        CREATE TYPE user_type_enum AS ENUM ('student', 'teacher', 'admin', 'bot');
+                    END IF;
+                END $$;
+            ");
+            echo "<p class='success'>✓ User type enum created with BOT</p>";
+        } catch (Exception $e) {
+            echo "<p class='error'>⚠ Could not create enum: " . $e->getMessage() . "</p>";
+        }
+    }
+    
+    // ==============================
+    // Bot Teachers Table (matches your Google Sheet structure)
+    // ==============================
+    echo "<p>📋 Creating bot_teachers table...</p>";
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS bot_teachers (
+            id SERIAL PRIMARY KEY,
+            teacher_name VARCHAR(100) NOT NULL,
+            branch VARCHAR(100) NOT NULL,
+            department VARCHAR(50) NOT NULL,
+            area_of_specialization VARCHAR(200) NOT NULL,
+            subjects_handled VARCHAR(200),
+            is_active BOOLEAN DEFAULT true,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (teacher_name, branch, department)
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_bot_teacher_name ON bot_teachers(teacher_name);
+        CREATE INDEX IF NOT EXISTS idx_bot_branch ON bot_teachers(branch);
+        CREATE INDEX IF NOT EXISTS idx_bot_department ON bot_teachers(department);
+    ");
+    echo "<p class='success'>✓ Bot teachers table created</p>";
+    
+    // ==============================
+    // Bot Evaluations Table
+    // ==============================
+    echo "<p>📊 Creating bot_evaluations table...</p>";
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS bot_evaluations (
+            id SERIAL PRIMARY KEY,
+            bot_username VARCHAR(50) NOT NULL,
+            bot_name VARCHAR(100) NOT NULL,
+            teacher_name VARCHAR(100) NOT NULL,
+            branch VARCHAR(100) NOT NULL,
+            department VARCHAR(50) NOT NULL,
+            area_of_specialization VARCHAR(200) NOT NULL,
+            subjects_handled VARCHAR(200),
+            
+            -- Section A: Instructional Competence (6 questions)
+            a1 SMALLINT CHECK (a1 BETWEEN 1 AND 4),
+            a2 SMALLINT CHECK (a2 BETWEEN 1 AND 4),
+            a3 SMALLINT CHECK (a3 BETWEEN 1 AND 4),
+            a4 SMALLINT CHECK (a4 BETWEEN 1 AND 4),
+            a5 SMALLINT CHECK (a5 BETWEEN 1 AND 4),
+            a6 SMALLINT CHECK (a6 BETWEEN 1 AND 4),
+            
+            -- Section B: Classroom Management and Environment (5 questions)
+            b1 SMALLINT CHECK (b1 BETWEEN 1 AND 4),
+            b2 SMALLINT CHECK (b2 BETWEEN 1 AND 4),
+            b3 SMALLINT CHECK (b3 BETWEEN 1 AND 4),
+            b4 SMALLINT CHECK (b4 BETWEEN 1 AND 4),
+            b5 SMALLINT CHECK (b5 BETWEEN 1 AND 4),
+            
+            -- Section C: Professionalism/Teacher's Ethics (5 questions)
+            c1 SMALLINT CHECK (c1 BETWEEN 1 AND 4),
+            c2 SMALLINT CHECK (c2 BETWEEN 1 AND 4),
+            c3 SMALLINT CHECK (c3 BETWEEN 1 AND 4),
+            c4 SMALLINT CHECK (c4 BETWEEN 1 AND 4),
+            c5 SMALLINT CHECK (c5 BETWEEN 1 AND 4),
+            
+            -- Comments and Recommendations
+            comments TEXT,
+            
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            -- Prevent duplicate evaluations from same BOT for same teacher
+            UNIQUE (bot_username, teacher_name)
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_bot_username ON bot_evaluations(bot_username);
+        CREATE INDEX IF NOT EXISTS idx_bot_teacher ON bot_evaluations(teacher_name);
+        CREATE INDEX IF NOT EXISTS idx_bot_branch_eval ON bot_evaluations(branch);
+        CREATE INDEX IF NOT EXISTS idx_bot_department_eval ON bot_evaluations(department);
+        CREATE INDEX IF NOT EXISTS idx_bot_created ON bot_evaluations(created_at);
+    ");
+    echo "<p class='success'>✓ Bot evaluations table created</p>";
+    
+    echo "<p class='info'>ℹ️ Note: Teacher data will be synced from Google Sheets. No sample data inserted.</p>";
     
     // Get detailed statistics
     $stats = $pdo->query("SELECT program, COUNT(*) as count FROM teacher_assignments GROUP BY program ORDER BY program")->fetchAll();
