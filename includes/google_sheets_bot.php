@@ -11,7 +11,7 @@ function getBotTeachersFromSheets() {
         $service = new Google_Service_Sheets($client);
         
         // Use the SAME spreadsheet ID as your student evaluation
-        $spreadsheetId = 'YOUR_SPREADSHEET_ID_HERE'; // Replace with your actual ID
+        $spreadsheetId = '1cFkTmh_1DUX4lb6VLK-EJjw5hlB9zvnYK8W__rTML-I'; // Replace with your actual ID
         
         // Get ALL 5 columns: A (teacher_name), B (branch), C (department), D (area_of_specialization), E (subjects_handled)
         $range = 'BOT_Teachers!A2:E'; 
