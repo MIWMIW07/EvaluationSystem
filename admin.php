@@ -1108,9 +1108,16 @@ ob_end_clean(); // Clean the output buffer
                     <i class="fas fa-download"></i> Download Reports
                 </a>
                 <!-- Add this inside the action-buttons div -->
-<a href="admin_bot_reports.php" class="btn btn-info">
-    <i class="fas fa-clipboard-check"></i> BOT Evaluation Reports
-</a>
+                <a href="admin_bot_reports.php" class="btn btn-info">
+                    <i class="fas fa-clipboard-check"></i> BOT Evaluation Reports
+                </a>
+                        <!-- ADD THESE NEW BOT SYNC BUTTONS -->
+                <a href="admin_sync_bot_users.php" class="btn btn-primary">
+                    <i class="fas fa-users"></i> Sync BOT Users
+                </a>
+                <a href="admin_sync_bot_data.php" class="btn btn-primary">
+                    <i class="fas fa-chalkboard-teacher"></i> Sync BOT Teachers
+                </a>
             </div>
         </div>
 
