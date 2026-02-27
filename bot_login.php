@@ -95,20 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-// Function to log activity
-function logActivity($username, $userType, $action, $details) {
-    try {
-        $pdo = getPDO();
-        $stmt = $pdo->prepare("
-            INSERT INTO activity_logs (username, user_type, action, details, ip_address) 
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([$username, $userType, $action, $details, $_SERVER['REMOTE_ADDR'] ?? '']);
-    } catch (Exception $e) {
-        // Silently fail - logging shouldn't break the main functionality
-    }
-}
 ?>
 
 <!DOCTYPE html>
