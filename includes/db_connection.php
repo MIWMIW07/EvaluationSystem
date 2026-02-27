@@ -134,17 +134,10 @@ class HybridDataManager {
     }
 
     public function getTeachers() {
-        if (!$this->sheetsService) return [];
-        try {
-            $range = "Teachers!A:C";
-            $response = $this->sheetsService->spreadsheets_values->get($this->sheetId, $range);
-            $rows = $response->getValues();
-            return array_slice($rows, 1);
-        } catch (Exception $e) {
-            error_log("Failed to get teachers: " . $e->getMessage());
-            return [];
-        }
-    }
+    // This function is not used in your system
+    // Student evaluation teachers come from teacher_assignments table, not Google Sheets
+    return [];
+}
 
     public function getPDO() {
         return $this->pdo;
