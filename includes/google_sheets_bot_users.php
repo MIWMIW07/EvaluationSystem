@@ -6,9 +6,10 @@ function getBotUsersFromSheets() {
     try {
         $client = new Google_Client();
         $client->setAuthConfig(__DIR__ . '/../credentials.json');
-        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
+        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY); // Changed to READONLY
         
         $service = new Google_Service_Sheets($client);
+        
         $spreadsheetId = getenv("GOOGLE_SHEETS_ID") ?: ($_ENV["GOOGLE_SHEETS_ID"] ?? $_SERVER["GOOGLE_SHEETS_ID"] ?? null);
         
         if (!$spreadsheetId) {
@@ -16,7 +17,6 @@ function getBotUsersFromSheets() {
             return [];
         }
         
-        // Get data from BOT_Users sheet, starting from row 2 (skip headers)
         $range = 'BOT_Users!A2:D';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
@@ -24,8 +24,7 @@ function getBotUsersFromSheets() {
         $users = [];
         if (!empty($values)) {
             foreach ($values as $row) {
-                // Make sure we have all 4 columns with data
-                if (count($row) >= 4 && !empty(trim($row[2] ?? ''))) { // username is required
+                if (count($row) >= 4 && !empty(trim($row[2] ?? ''))) {
                     $users[] = [
                         'bot_id' => trim($row[0] ?? ''),
                         'full_name' => trim($row[1] ?? ''),
@@ -36,7 +35,6 @@ function getBotUsersFromSheets() {
             }
         }
         
-        error_log("getBotUsersFromSheets found " . count($users) . " users");
         return $users;
         
     } catch (Exception $e) {
@@ -49,7 +47,6 @@ function syncBotUsersToDatabase($pdo) {
     $users = getBotUsersFromSheets();
     
     if (empty($users)) {
-        error_log("syncBotUsersToDatabase: No users found from Google Sheets");
         return 0;
     }
     
@@ -57,7 +54,6 @@ function syncBotUsersToDatabase($pdo) {
     $deactivateStmt = $pdo->prepare("UPDATE users SET is_active = false WHERE user_type = 'bot'");
     $deactivateStmt->execute();
     
-    // Insert or update bot users
     $insertStmt = $pdo->prepare("
         INSERT INTO users (username, password, full_name, user_type, is_active)
         VALUES (?, ?, ?, 'bot', true)
@@ -71,22 +67,16 @@ function syncBotUsersToDatabase($pdo) {
     
     $count = 0;
     foreach ($users as $user) {
-        try {
-            // Hash the password before storing
-            $hashedPassword = password_hash($user['password'], PASSWORD_DEFAULT);
-            
-            $insertStmt->execute([
-                $user['username'],
-                $hashedPassword,
-                $user['full_name']
-            ]);
-            $count++;
-        } catch (Exception $e) {
-            error_log("Error inserting user {$user['username']}: " . $e->getMessage());
-        }
+        $hashedPassword = password_hash($user['password'], PASSWORD_DEFAULT);
+        
+        $insertStmt->execute([
+            $user['username'],
+            $hashedPassword,
+            $user['full_name']
+        ]);
+        $count++;
     }
     
-    error_log("syncBotUsersToDatabase: Successfully synced $count users");
     return $count;
 }
 ?>
