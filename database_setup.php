@@ -1,7 +1,7 @@
 <?php
 // database_setup.php
-// FINAL VERSION - Complete database setup with all real teacher assignments
-// Students data stored in Google Sheets, Teacher Assignments in PostgreSQL
+// FINAL VERSION - Complete database setup with all real teacher assignments and BOT evaluation system
+// Students data stored in Google Sheets, Teacher Assignments in PostgreSQL, BOT data in PostgreSQL
 
 require_once __DIR__ . '/includes/db_connection.php';
 
@@ -28,8 +28,11 @@ if (!isDatabaseAvailable()) {
                 <h3>Hybrid System Information:</h3>
                 <ul>
                     <li><strong>Students Data:</strong> Stored in Google Sheets (Student_ID, Last_Name, First_Name, Section, Program, Username, Password)</li>
-                    <li><strong>Teachers List:</strong> Stored in PostgreSQL (teacher_assignments table)</li>
-                    <li><strong>Evaluations:</strong> Stored in PostgreSQL (evaluations table)</li>
+                    <li><strong>Teachers List (Student Evaluation):</strong> Stored in PostgreSQL (teacher_assignments table)</li>
+                    <li><strong>Student Evaluations:</strong> Stored in PostgreSQL (evaluations table)</li>
+                    <li><strong>BOT Teachers:</strong> Stored in PostgreSQL (bot_teachers table) - synced from Google Sheets</li>
+                    <li><strong>BOT Users:</strong> Stored in PostgreSQL (users table with type 'bot') - synced from Google Sheets</li>
+                    <li><strong>BOT Evaluations:</strong> Stored in PostgreSQL (bot_evaluations table)</li>
                 </ul>
                 
                 <p><strong>Next Steps:</strong></p>
@@ -308,15 +311,55 @@ try {
     // ==============================
     echo "<p>🗑️ Cleaning up old tables...</p>";
     $pdo->exec("
+        DROP TABLE IF EXISTS bot_evaluations CASCADE;
+        DROP TABLE IF EXISTS bot_teachers CASCADE;
         DROP TABLE IF EXISTS evaluations CASCADE;
         DROP TABLE IF EXISTS teacher_assignments CASCADE;
         DROP TABLE IF EXISTS login_attempts CASCADE;
         DROP TABLE IF EXISTS activity_logs CASCADE;
+        DROP TABLE IF EXISTS users CASCADE;
     ");
     echo "<p class='success'>✓ Old tables removed</p>";
 
     // ==============================
-    // Teacher Assignments Table
+    // Create ENUM type for user_type if not exists
+    // ==============================
+    echo "<p>🔧 Creating user_type enum...</p>";
+    $pdo->exec("
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_type_enum') THEN
+                CREATE TYPE user_type_enum AS ENUM ('student', 'teacher', 'admin', 'bot');
+            END IF;
+        END $$;
+    ");
+    echo "<p class='success'>✓ User type enum created/updated with BOT</p>";
+
+    // ==============================
+    // Users Table
+    // ==============================
+    echo "<p>👥 Creating users table...</p>";
+    $pdo->exec("
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            full_name VARCHAR(100) NOT NULL,
+            user_type user_type_enum NOT NULL,
+            is_active BOOLEAN DEFAULT true,
+            last_login TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE INDEX idx_users_username ON users(username);
+        CREATE INDEX idx_users_type ON users(user_type);
+        CREATE INDEX idx_users_active ON users(is_active);
+    ");
+    echo "<p class='success'>✓ Users table created</p>";
+
+    // ==============================
+    // Teacher Assignments Table (for Student Evaluation)
     // ==============================
     echo "<p>📋 Creating teacher_assignments table...</p>";
     $pdo->exec("
@@ -341,7 +384,7 @@ try {
     echo "<p class='success'>✓ Teacher assignments table created</p>";
 
     // ==============================
-    // Evaluations Table
+    // Student Evaluations Table
     // ==============================
     echo "<p>📊 Creating evaluations table (with separate comment fields)...</p>";
     $pdo->exec("
@@ -409,7 +452,7 @@ try {
         CREATE TABLE activity_logs (
             id SERIAL PRIMARY KEY,
             username VARCHAR(50) NOT NULL,
-            user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('student', 'teacher', 'admin')),
+            user_type VARCHAR(20) NOT NULL,
             action VARCHAR(100) NOT NULL,
             details TEXT,
             ip_address VARCHAR(45),
@@ -442,51 +485,11 @@ try {
     echo "<p class='success'>✓ Login attempts table created</p>";
 
     // ==============================
-    // Insert ALL Real Teacher Assignments
-    // ==============================
-    echo "<hr>";
-    $totalInserted = insertAllTeacherAssignments($pdo);
-
-    // ==============================
-    // Summary and Statistics
-    // ==============================
-    echo "<div class='summary'>";
-    echo "<h3>✅ Database Setup Complete!</h3>";
-    echo "<p class='success'><strong>Total teacher assignments inserted: {$totalInserted}</strong></p>";
-    echo "</div>";
-
-    // ==============================
-    // Add BOT user type to enum if needed
-    // ==============================
-    echo "<p>🔧 Updating user_type enum to include BOT...</p>";
-    try {
-        $pdo->exec("
-            ALTER TYPE user_type_enum ADD VALUE IF NOT EXISTS 'bot';
-        ");
-        echo "<p class='success'>✓ User type enum updated with BOT</p>";
-    } catch (Exception $e) {
-        // If enum doesn't exist yet, create it
-        try {
-            $pdo->exec("
-                DO $$ 
-                BEGIN 
-                    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_type_enum') THEN
-                        CREATE TYPE user_type_enum AS ENUM ('student', 'teacher', 'admin', 'bot');
-                    END IF;
-                END $$;
-            ");
-            echo "<p class='success'>✓ User type enum created with BOT</p>";
-        } catch (Exception $e) {
-            echo "<p class='error'>⚠ Could not create enum: " . $e->getMessage() . "</p>";
-        }
-    }
-    
-    // ==============================
     // Bot Teachers Table (matches your Google Sheet structure)
     // ==============================
     echo "<p>📋 Creating bot_teachers table...</p>";
     $pdo->exec("
-        CREATE TABLE IF NOT EXISTS bot_teachers (
+        CREATE TABLE bot_teachers (
             id SERIAL PRIMARY KEY,
             teacher_name VARCHAR(100) NOT NULL,
             branch VARCHAR(100) NOT NULL,
@@ -499,9 +502,9 @@ try {
             UNIQUE (teacher_name, branch, department)
         );
         
-        CREATE INDEX IF NOT EXISTS idx_bot_teacher_name ON bot_teachers(teacher_name);
-        CREATE INDEX IF NOT EXISTS idx_bot_branch ON bot_teachers(branch);
-        CREATE INDEX IF NOT EXISTS idx_bot_department ON bot_teachers(department);
+        CREATE INDEX idx_bot_teacher_name ON bot_teachers(teacher_name);
+        CREATE INDEX idx_bot_branch ON bot_teachers(branch);
+        CREATE INDEX idx_bot_department ON bot_teachers(department);
     ");
     echo "<p class='success'>✓ Bot teachers table created</p>";
     
@@ -510,7 +513,7 @@ try {
     // ==============================
     echo "<p>📊 Creating bot_evaluations table...</p>";
     $pdo->exec("
-        CREATE TABLE IF NOT EXISTS bot_evaluations (
+        CREATE TABLE bot_evaluations (
             id SERIAL PRIMARY KEY,
             bot_username VARCHAR(50) NOT NULL,
             bot_name VARCHAR(100) NOT NULL,
@@ -552,17 +555,42 @@ try {
             UNIQUE (bot_username, teacher_name)
         );
         
-        CREATE INDEX IF NOT EXISTS idx_bot_username ON bot_evaluations(bot_username);
-        CREATE INDEX IF NOT EXISTS idx_bot_teacher ON bot_evaluations(teacher_name);
-        CREATE INDEX IF NOT EXISTS idx_bot_branch_eval ON bot_evaluations(branch);
-        CREATE INDEX IF NOT EXISTS idx_bot_department_eval ON bot_evaluations(department);
-        CREATE INDEX IF NOT EXISTS idx_bot_created ON bot_evaluations(created_at);
+        CREATE INDEX idx_bot_username ON bot_evaluations(bot_username);
+        CREATE INDEX idx_bot_teacher ON bot_evaluations(teacher_name);
+        CREATE INDEX idx_bot_branch_eval ON bot_evaluations(branch);
+        CREATE INDEX idx_bot_department_eval ON bot_evaluations(department);
+        CREATE INDEX idx_bot_created ON bot_evaluations(created_at);
     ");
     echo "<p class='success'>✓ Bot evaluations table created</p>";
+
+    // ==============================
+    // Insert ALL Real Teacher Assignments (for Student Evaluation)
+    // ==============================
+    echo "<hr>";
+    $totalInserted = insertAllTeacherAssignments($pdo);
+
+    // ==============================
+    // Insert Default Admin User
+    // ==============================
+    echo "<p>👤 Creating default admin user...</p>";
+    $adminPassword = password_hash('guidanceservice2025', PASSWORD_DEFAULT);
+    $insertAdmin = $pdo->prepare("
+        INSERT INTO users (username, password, full_name, user_type, is_active)
+        VALUES (?, ?, ?, 'admin', true)
+        ON CONFLICT (username) DO NOTHING
+    ");
+    $insertAdmin->execute(['GUIDANCE', $adminPassword, 'Guidance Administrator']);
+    echo "<p class='success'>✓ Default admin user created (Username: GUIDANCE, Password: guidanceservice2025)</p>";
+
+    // ==============================
+    // Summary and Statistics
+    // ==============================
+    echo "<div class='summary'>";
+    echo "<h3>✅ Database Setup Complete!</h3>";
+    echo "<p class='success'><strong>Total teacher assignments inserted: {$totalInserted}</strong></p>";
+    echo "</div>";
     
-    echo "<p class='info'>ℹ️ Note: Teacher data will be synced from Google Sheets. No sample data inserted.</p>";
-    
-    // Get detailed statistics
+    // Get detailed statistics for student evaluation
     $stats = $pdo->query("SELECT program, COUNT(*) as count FROM teacher_assignments GROUP BY program ORDER BY program")->fetchAll();
     $uniqueTeachers = $pdo->query("SELECT COUNT(DISTINCT teacher_name) FROM teacher_assignments")->fetchColumn();
     $uniqueSections = $pdo->query("SELECT COUNT(DISTINCT section) FROM teacher_assignments")->fetchColumn();
@@ -570,8 +598,8 @@ try {
     $shsCount = $pdo->query("SELECT COUNT(*) FROM teacher_assignments WHERE program = 'SHS'")->fetchColumn();
     
     echo "<div class='stats-grid'>";
-    echo "<div class='stat-card'><div class='stat-number'>{$totalInserted}</div><div class='stat-label'>Total Assignments</div></div>";
-    echo "<div class='stat-card'><div class='stat-number'>{$uniqueTeachers}</div><div class='stat-label'>Unique Teachers</div></div>";
+    echo "<div class='stat-card'><div class='stat-number'>{$totalInserted}</div><div class='stat-label'>Student Evaluation Assignments</div></div>";
+    echo "<div class='stat-card'><div class='stat-number'>{$uniqueTeachers}</div><div class='stat-label'>Unique Teachers (Student Eval)</div></div>";
     echo "<div class='stat-card'><div class='stat-number'>{$uniqueSections}</div><div class='stat-label'>Sections Covered</div></div>";
     echo "<div class='stat-card'><div class='stat-number'>{$collegeCount}</div><div class='stat-label'>College Assignments</div></div>";
     echo "<div class='stat-card'><div class='stat-number'>{$shsCount}</div><div class='stat-label'>SHS Assignments</div></div>";
@@ -581,8 +609,11 @@ try {
     echo "<h3>🏫 System Information</h3>";
     echo "<p><strong>Tables Created:</strong></p>";
     echo "<ul>";
-    echo "<li>📋 <code>teacher_assignments</code> - All real teacher-section assignments</li>";
+    echo "<li>👥 <code>users</code> - All system users (admin, bot)</li>";
+    echo "<li>📋 <code>teacher_assignments</code> - Student evaluation teacher-section assignments</li>";
     echo "<li>📊 <code>evaluations</code> - Student evaluation responses <strong>(separate positive/negative comment fields)</strong></li>";
+    echo "<li>📋 <code>bot_teachers</code> - BOT evaluation teacher list (synced from Google Sheets)</li>";
+    echo "<li>📊 <code>bot_evaluations</code> - BOT evaluation responses</li>";
     echo "<li>📝 <code>activity_logs</code> - User activity tracking</li>";
     echo "<li>🔒 <code>login_attempts</code> - Login attempt monitoring</li>";
     echo "</ul>";
@@ -590,19 +621,22 @@ try {
     echo "<p><strong>Data Sources:</strong></p>";
     echo "<ul>";
     echo "<li>📑 <strong>Students:</strong> Google Sheets (Student_ID, Last_Name, First_Name, Section, Program, Username, Password)</li>";
-    echo "<li>👨‍🏫 <strong>Teachers:</strong> Database teacher_assignments table (populated with all real data)</li>";
-    echo "<li>📊 <strong>Evaluations:</strong> Database evaluations table</li>";
+    echo "<li>👨‍🏫 <strong>Student Evaluation Teachers:</strong> Database teacher_assignments table (populated with all real data)</li>";
+    echo "<li>👥 <strong>BOT Users:</strong> Google Sheets (BOT_Users sheet) - synced via admin panel</li>";
+    echo "<li>👨‍🏫 <strong>BOT Teachers:</strong> Google Sheets (BOT_Teachers sheet) - synced via admin panel</li>";
+    echo "<li>📊 <strong>Evaluations:</strong> Database evaluations and bot_evaluations tables</li>";
     echo "</ul>";
     
     echo "<p><strong>Key Features:</strong></p>";
     echo "<ul>";
-    echo "<li>✅ <strong>Separate Comment Fields:</strong> <code>positive_comments</code> and <code>negative_comments</code> for easier querying</li>";
-    echo "<li>✅ <strong>Full-Text Search:</strong> Indexed comments for fast searching</li>";
+    echo "<li>✅ <strong>Student Evaluation:</strong> 20 questions with separate comment fields</li>";
+    echo "<li>✅ <strong>BOT Evaluation:</strong> 16 questions (4-point scale) with weighted computation</li>";
+    echo "<li>✅ <strong>Google Sheets Integration:</strong> Students, BOT Users, and BOT Teachers</li>";
     echo "<li>✅ <strong>Activity Tracking:</strong> Monitor user actions</li>";
     echo "<li>✅ <strong>Login Security:</strong> Track login attempts</li>";
     echo "</ul>";
     
-    echo "<p><strong>Ready to use!</strong> Your BSCS3M1 section should now show teachers.</p>";
+    echo "<p><strong>Ready to use!</strong></p>";
     echo "</div>";
     
     echo "<div style='margin: 30px 0;'>";
