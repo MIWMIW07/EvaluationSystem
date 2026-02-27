@@ -1,5 +1,5 @@
 <?php
-// includes/google_sheets_bot.php
+// includes/google_sheets_bot.php - UPDATED for 5-column structure
 require_once __DIR__ . '/../vendor/autoload.php';
 
 function getBotTeachersFromSheets() {
@@ -9,6 +9,8 @@ function getBotTeachersFromSheets() {
         $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
         
         $service = new Google_Service_Sheets($client);
+        
+        // IMPORTANT: Replace with your actual spreadsheet ID
         $spreadsheetId = getenv("GOOGLE_SHEETS_ID") ?: ($_ENV["GOOGLE_SHEETS_ID"] ?? $_SERVER["GOOGLE_SHEETS_ID"] ?? null);
         
         if (!$spreadsheetId) {
@@ -16,7 +18,7 @@ function getBotTeachersFromSheets() {
             return [];
         }
         
-        // Get data from BOT_Teachers sheet, starting from row 2 (skip headers)
+        // Get ALL 5 columns: A (teacher_name), B (branch), C (department), D (area_of_specialization), E (subjects_handled)
         $range = 'BOT_Teachers!A2:E';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
@@ -58,7 +60,7 @@ function syncBotTeachersToDatabase($pdo) {
     $deactivateStmt = $pdo->prepare("UPDATE bot_teachers SET is_active = false");
     $deactivateStmt->execute();
     
-    // Insert or update teachers
+    // Insert or update teachers with all 5 columns
     $insertStmt = $pdo->prepare("
         INSERT INTO bot_teachers (teacher_name, branch, department, area_of_specialization, subjects_handled, is_active)
         VALUES (?, ?, ?, ?, ?, true)
