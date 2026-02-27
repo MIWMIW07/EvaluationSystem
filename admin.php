@@ -1107,10 +1107,10 @@ ob_end_clean(); // Clean the output buffer
                 <a href="admin_download_reports.php" class="btn btn-gold">
                     <i class="fas fa-download"></i> Download Reports
                 </a>
-                <a href="admin_bot_reports.php" class="menu-item">
-                    <span class="icon">👥</span>
-                    <span>BOT Evaluation Reports</span>
-                </a>
+                <!-- Add this inside the action-buttons div -->
+<a href="admin_bot_reports.php" class="btn btn-info">
+    <i class="fas fa-clipboard-check"></i> BOT Evaluation Reports
+</a>
             </div>
         </div>
 
