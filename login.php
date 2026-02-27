@@ -1,370 +1,563 @@
 <?php
-// Start output buffering at the VERY beginning to prevent header errors
-ob_start();
-
 session_start();
-require_once 'includes/db_connection.php';
 
-// Initialize variables
-$redirect_url = null;
-$show_preloader = false;
-$error_message = null;
-
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $username = trim($_POST["username"]);
-    $password = trim($_POST["password"]);
-
-    // Basic validation
-    if (empty($username) || empty($password)) {
-        $error_message = "Please enter both username and password.";
+// Check if user is already logged in
+if (isset($_SESSION['user_id'])) {
+    if ($_SESSION['user_type'] === 'admin') {
+        header('Location: admin.php');
+    } elseif ($_SESSION['user_type'] === 'student') {
+        header('Location: student_dashboard.php');
+    } elseif ($_SESSION['user_type'] === 'bot') {
+        header('Location: bot_dashboard.php');
     } else {
-        try {
-            $manager = getDataManager();
-            $auth = $manager->authenticateUser($username, $password);
-
-            if ($auth) {
-                if ($auth['type'] === 'admin') {
-                    // Admin login
-                    $_SESSION['user_id'] = 'admin';
-                    $_SESSION['user_type'] = 'admin';
-                    $_SESSION['username'] = 'GUIDANCE';
-                    $_SESSION['full_name'] = 'System Administrator';
-                    
-                    $redirect_url = "admin.php";
-                    $show_preloader = true;
-                    
-                } elseif ($auth['type'] === 'student') {
-                    // Student login - get detailed student data
-                    $reflection = new ReflectionClass($manager);
-                    $method = $reflection->getMethod('findStudent');
-                    $method->setAccessible(true);
-                    $studentData = $method->invoke($manager, $username, $password);
-                    
-                    if ($studentData) {
-                        // Set all session variables
-                        $_SESSION['user_id'] = $studentData['student_id'];
-                        $_SESSION['user_type'] = 'student';
-                        $_SESSION['username'] = $studentData['username'];
-                        $_SESSION['full_name'] = $studentData['full_name'];
-                        $_SESSION['first_name'] = $studentData['first_name'];
-                        $_SESSION['last_name'] = $studentData['last_name'];
-                        $_SESSION['section'] = $studentData['section'];
-                        $_SESSION['program'] = $studentData['program'];
-                        $_SESSION['student_id'] = $studentData['student_id'];
-
-                        // Log successful login
-                        if (function_exists('logActivity')) {
-                            logActivity("login", "Student {$studentData['username']} logged in", "success", $studentData['student_id']);
-                        }
-
-                        $redirect_url = "student_dashboard.php";
-                        $show_preloader = true;
-                    } else {
-                        $error_message = "Could not retrieve student information.";
-                    }
-                }
-            } else {
-                // Invalid credentials
-                if (function_exists('logActivity')) {
-                    logActivity("login_failed", "Invalid login attempt for username: $username", "error", null);
-                }
-                $error_message = "Invalid username or password.";
-            }
-
-        } catch (Exception $e) {
-            // Handle errors
-            error_log("Login error: " . $e->getMessage());
-            $error_message = "Login system temporarily unavailable. Please try again later.";
-        }
+        header('Location: login.php');
     }
-
-    // If there's an error, set session error and redirect
-    if ($error_message) {
-        $_SESSION['error'] = $error_message;
-        header("Location: index.php");
-        exit;
-    }
-} else {
-    // Not a POST request, redirect to login page
-    header("Location: index.php");
-    exit;
+    exit();
 }
-
-// If we reach here, login was successful and we should show preloader
-// Clear any output buffer before sending HTML
-ob_clean();
-
-// If we have a redirect URL and should show preloader, display the preloader page
-if ($show_preloader && $redirect_url) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login Successful - Redirecting...</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Evaluation System - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
-        
-        body, html {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            background: linear-gradient(135deg, #4A0012 0%, #800020 25%, #DAA520 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        .preloader-overlay {
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            background: linear-gradient(135deg, #8B0000 0%, #4A0000 50%, #2B0000 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: auto;
+        }
+
+        body::before {
+            content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #4A0012, #800020, #DAA520);
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            transition: opacity 0.8s ease;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -200px;
+            right: -200px;
+            animation: float 20s ease-in-out infinite;
         }
-        
-        .logo-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 30px;
+
+        body::after {
+            content: '';
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -150px;
+            left: -150px;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(50px, 50px) rotate(180deg); }
+        }
+
+        .login-container {
+            background: #F5F5F0;
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+            z-index: 1;
+            margin: auto;
+        }
+
+        .header-container {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
             position: relative;
         }
-        
-        .logo-container {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            margin-bottom: 20px;
-        }
-        
-        .logo-image {
-            width: 100px;
-            height: 100px;
+
+        .header-container::after {
+            content: '';
             position: absolute;
-            top: 50%;
+            bottom: 0;
             left: 50%;
-            transform: translate(-50%, -45%);
-            z-index: 2;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+            border-radius: 2px;
         }
-        
-        .rotating-border {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            border-top: 3px solid gold;
-            border-right: 3px solid maroon;
-            border-bottom: 3px solid goldenrod;
-            border-left: 3px solid #800020;
-            animation: spinBorder 2s linear infinite;
-            box-shadow: 0 0 15px rgba(218, 165, 32, 0.5);
-        }
-        
-        .logo-placeholder {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, gold, goldenrod);
+
+        .school-name-box {
             display: flex;
-            justify-content: center;
             align-items: center;
-            color: #4A0012;
-            font-weight: bold;
-            font-size: 14px;
-            text-align: center;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        }
-        
-        .loading-content {
-            text-align: center;
-            color: white;
-        }
-        
-        .welcome-message {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .user-info {
-            font-size: 18px;
-            margin-bottom: 20px;
-            opacity: 0.9;
-        }
-        
-        .loading-text {
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        
-        .progress-bar {
-            width: 300px;
-            height: 6px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-            margin: 20px auto;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(139, 0, 0, 0.05) 100%);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            margin-top: 1.25rem;
+            position: relative;
             overflow: hidden;
         }
-        
-        .progress {
-            width: 0%;
+
+        .school-name-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, gold, goldenrod);
-            border-radius: 3px;
-            animation: progress 3s ease-in-out forwards;
+            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.15), transparent);
+            transition: left 0.8s ease;
         }
-        
-        .redirect-info {
-            font-size: 14px;
+
+        .school-name-box:hover::before {
+            left: 100%;
+        }
+
+        .school-name {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #D4AF37 0%, #B8941F 50%, #8B0000 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .logo {
+            height: 4.375rem;
+            width: auto;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #8B0000 0%, #5A0000 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .system-subtitle {
+            background: linear-gradient(135deg, #D4AF37 0%, #B8941F 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.375rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            background: linear-gradient(135deg, #8B0000 0%, #5A0000 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.625rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.3px;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.875rem 0.9375rem 0.875rem 3rem;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.03) 0%, rgba(255, 255, 255, 1) 100%);
+            color: #2B0000;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #D4AF37;
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15),
+                        0 8px 16px rgba(139, 0, 0, 0.1);
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        input::placeholder {
+            color: rgba(139, 0, 0, 0.4);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #D4AF37 0%, #8B0000 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.125rem;
+            transition: transform 0.3s ease;
+        }
+
+        .input-container:focus-within .input-icon {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #D4AF37 0%, #8B0000 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+            font-size: 1.125rem;
+            transition: transform 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            transform: translateY(-50%) scale(1.15);
+        }
+
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, #D4AF37 0%, #B8941F 50%, #8B0000 100%);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.0625rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            margin-top: 0.9375rem;
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4),
+                        0 0 0 1px rgba(212, 175, 55, 0.5);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+            z-index: -1;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #8B0000 0%, #5A0000 50%, #D4AF37 100%);
+            opacity: 0;
+            z-index: -2;
+            transition: opacity 0.6s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(212, 175, 55, 0.6),
+                        0 0 40px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover::after {
+            opacity: 1;
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn:disabled {
             opacity: 0.7;
-            margin-top: 15px;
+            cursor: not-allowed;
         }
-        
-        @keyframes spinBorder {
-            0% { 
-                transform: rotate(0deg);
-                border-top-color: gold;
-                border-right-color: maroon;
+
+        .footer {
+            text-align: center;
+            margin-top: 2.1875rem;
+            color: #666;
+            font-size: 0.75rem;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            padding-top: 1.5625rem;
+            line-height: 1.6;
+        }
+
+        .footer p {
+            background: linear-gradient(135deg, #8B0000 0%, #D4AF37 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 500;
+        }
+
+        /* User type selector */
+        .user-type-selector {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .user-type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #8B0000;
+            transition: all 0.3s ease;
+        }
+
+        .user-type-btn.active {
+            background: #8B0000;
+            color: white;
+            border-color: #8B0000;
+        }
+
+        .user-type-btn:hover {
+            border-color: #8B0000;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
             }
-            25% {
-                border-top-color: goldenrod;
-                border-right-color: #800020;
+            
+            h1 {
+                font-size: 1.75rem;
             }
-            50% {
-                border-top-color: #DAA520;
-                border-right-color: #4A0012;
+            
+            .system-subtitle {
+                font-size: 1.25rem;
             }
-            75% {
-                border-top-color: #800020;
-                border-right-color: gold;
+            
+            .school-name {
+                font-size: 0.8125rem;
             }
-            100% { 
-                transform: rotate(360deg);
-                border-top-color: gold;
-                border-right-color: maroon;
+
+            .logo {
+                height: 3.75rem;
+            }
+            
+            .school-name-box {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            
+            body::before, body::after {
+                display: none;
             }
         }
-        
-        @keyframes progress {
-            0% { width: 0%; }
-            100% { width: 100%; }
+
+        @media (max-height: 700px) {
+            .login-container {
+                padding: 1.5rem;
+                margin: 0.5rem auto;
+            }
+            
+            .header-container {
+                margin-bottom: 1.5rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .footer {
+                margin-top: 1.5rem;
+                padding-top: 1rem;
+            }
         }
-        
-        .pulse {
-            animation: pulse 2s infinite;
+
+        @media (max-height: 600px) {
+            body {
+                align-items: flex-start;
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
         }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
+
+        @media (max-width: 350px) {
+            .login-container {
+                padding: 1.5rem 1rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .system-subtitle {
+                font-size: 1.125rem;
+            }
+            
+            .school-name {
+                font-size: 0.75rem;
+            }
+            
+            .logo {
+                height: 3rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="preloader-overlay" id="preloader">
-        <div class="logo-section">
-            <div class="logo-container">
-                <div class="rotating-border"></div>
-                <!-- Logo with fallback -->
-                <img src="logo.png" alt="School Logo" class="logo-image" id="school-logo" 
-                     onerror="this.style.display='none'; document.getElementById('logo-placeholder').style.display='flex';">
-                <div id="logo-placeholder" class="logo-placeholder" style="display: none;">
-                    School Logo
+    <div class="login-container" data-aos="fade-up" data-aos-duration="800">
+        <div class="header-container" data-aos="fade-down" data-aos-delay="200">
+            <h1>Teacher Evaluation</h1>
+            <div class="system-subtitle">System</div>
+            <div class="school-name-box" data-aos="zoom-in" data-aos-delay="400">
+                <div class="school-name">
+                    <img src="logo.png" alt="School Logo" class="logo" onerror="this.style.display='none'">
+                    Philippine Technological Institute of Science Arts and Trade, Inc.
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" action="login.php">
+            <!-- Hidden field to specify user type (will be set by JavaScript) -->
+            <input type="hidden" name="user_type" id="userTypeInput" value="student">
+            
+            <div class="user-type-selector">
+                <button type="button" class="user-type-btn active" onclick="setUserType('student')">Student</button>
+                <button type="button" class="user-type-btn" onclick="setUserType('bot')">BOT</button>
+                <button type="button" class="user-type-btn" onclick="setUserType('admin')">Admin</button>
+            </div>
+            
+            <div class="form-group" data-aos="fade-right" data-aos-delay="600">
+                <label for="username">Username</label>
+                <div class="input-container">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
                 </div>
             </div>
             
-            <div class="loading-content">
-                <div class="welcome-message">Login Successful!</div>
-                <div class="user-info">Welcome, <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?>!</div>
+            <div class="form-group" data-aos="fade-right" data-aos-delay="800">
+                <label for="password">Password</label>
+                <div class="input-container">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <i class="fas fa-eye password-toggle" id="passwordToggle"></i>
+                </div>
             </div>
-        </div>
+            
+            <button type="submit" class="btn" data-aos="fade-right" data-aos-delay="900">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </form>
         
-        <div class="loading-text">Loading your dashboard...</div>
-        
-        <div class="progress-bar">
-            <div class="progress"></div>
-        </div>
-        
-        <div class="redirect-info">
-            You will be automatically redirected in <span id="countdown">3</span> seconds
+        <div class="footer">
+            <p>&copy; 2025 - Philippine Technological Institute of Science Arts and Trade - Central Inc.</p>
         </div>
     </div>
 
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-        // Countdown timer
-        let seconds = 3;
-        const countdownElement = document.getElementById('countdown');
-        
-        const countdown = setInterval(() => {
-            seconds--;
-            countdownElement.textContent = seconds;
-            
-            if (seconds <= 0) {
-                clearInterval(countdown);
-            }
-        }, 1000);
-
-        // Fade out animation before redirect
-        setTimeout(() => {
-            const preloader = document.getElementById('preloader');
-            preloader.style.opacity = '0';
-            preloader.style.transform = 'scale(1.1)';
-        }, 2500);
-
-        // Redirect after 3 seconds
-        setTimeout(() => {
-            window.location.href = "<?php echo $redirect_url; ?>";
-        }, 3000);
-
-        // Allow user to click to skip waiting
-        document.getElementById('preloader').addEventListener('click', () => {
-            window.location.href = "<?php echo $redirect_url; ?>";
+        AOS.init({
+            once: true,
+            duration: 800,
+            easing: 'ease-out-cubic'
         });
 
-        // Auto-hide logo if not found and show placeholder
-        window.addEventListener('load', function() {
-            const logo = document.getElementById('school-logo');
-            const placeholder = document.getElementById('logo-placeholder');
+        function setUserType(type) {
+            // Update hidden input
+            document.getElementById('userTypeInput').value = type;
             
-            // Check if logo loaded successfully
-            if (logo.complete && logo.naturalHeight === 0) {
-                logo.style.display = 'none';
-                placeholder.style.display = 'flex';
-            }
+            // Update button styles
+            document.querySelectorAll('.user-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        document.querySelector("form").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const btn = document.querySelector(".btn");
+            const form = this;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+
+            setTimeout(function() {
+                form.submit();
+            }, 1000);
+        });
+
+        document.getElementById('passwordToggle').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
         });
     </script>
 </body>
 </html>
-<?php
-}
-
-// End output buffering
-ob_end_flush();
-exit;
-?>
