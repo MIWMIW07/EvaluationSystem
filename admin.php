@@ -1095,29 +1095,53 @@ ob_end_clean(); // Clean the output buffer
         <div class="card">
             <h3><i class="fas fa-tasks"></i> Quick Actions</h3>
             <div class="action-buttons">
-                <button class="btn btn-success" onclick="generateLocalReports()">
-                    <i class="fas fa-chart-bar"></i> Generate Evaluation Reports
+                <button class="btn" style="background: #28a745;" onclick="generateLocalReports()" 
+                        onmouseover="this.style.backgroundColor='#218838'" 
+                        onmouseout="this.style.backgroundColor='#28a745'">
+                    <i class="fas fa-chart-bar"></i> Generate Reports
                 </button>
-                <button class="btn btn-info" onclick="refreshEvaluations()">
-                    <i class="fas fa-sync-alt"></i> Refresh Evaluations
+                
+                <button class="btn" style="background: #17a2b8;" onclick="refreshEvaluations()"
+                        onmouseover="this.style.backgroundColor='#138496'" 
+                        onmouseout="this.style.backgroundColor='#17a2b8'">
+                    <i class="fas fa-sync-alt"></i> Refresh
                 </button>
-                <a href="maintenance.php" class="btn btn-warning">
-                    <i class="fas fa-tools"></i> System Maintenance
+                
+                <a href="maintenance.php" class="btn" style="background: #ffc107; color: #212529;"
+                   onmouseover="this.style.backgroundColor='#e0a800'" 
+                   onmouseout="this.style.backgroundColor='#ffc107'">
+                    <i class="fas fa-tools"></i> Maintenance
                 </a>
-                <a href="admin_download_reports.php" class="btn btn-gold">
-                    <i class="fas fa-download"></i> Download Reports
+                
+                <a href="admin_download_reports.php" class="btn" style="background: #d4af37; color: #212529;"
+                   onmouseover="this.style.backgroundColor='#b8941f'" 
+                   onmouseout="this.style.backgroundColor='#d4af37'">
+                    <i class="fas fa-download"></i> Download
                 </a>
-                <!-- Add this inside the action-buttons div -->
-                <a href="admin_bot_reports.php" class="btn btn-info">
-                    <i class="fas fa-clipboard-check"></i> BOT Evaluation Reports
+                
+                <a href="admin_bot_reports.php" class="btn" style="background: #800000;"
+                   onmouseover="this.style.backgroundColor='#660000'" 
+                   onmouseout="this.style.backgroundColor='#800000'">
+                    <i class="fas fa-clipboard-check"></i> BOT Reports
                 </a>
-                        <!-- ADD THESE NEW BOT SYNC BUTTONS -->
-                <a href="admin_sync_bot_users.php" class="btn btn-primary">
-                    <i class="fas fa-users"></i> Sync BOT Users
+                
+                <a href="admin_sync_bot_data.php" class="btn" style="background: #6f42c1;"
+                   onmouseover="this.style.backgroundColor='#5a32a3'" 
+                   onmouseout="this.style.backgroundColor='#6f42c1'">
+                    <i class="fas fa-chalkboard-teacher"></i> Sync Teachers
                 </a>
-                <a href="admin_sync_bot_data.php" class="btn btn-primary">
-                    <i class="fas fa-chalkboard-teacher"></i> Sync BOT Teachers
+                
+                <a href="admin_sync_bot_users.php" class="btn" style="background: #fd7e14;"
+                   onmouseover="this.style.backgroundColor='#dc6a0b'" 
+                   onmouseout="this.style.backgroundColor='#fd7e14'">
+                    <i class="fas fa-users"></i> Sync Users
                 </a>
+                
+                <button class="btn" style="background: #28a745;" onclick="exportToCSV()"
+                        onmouseover="this.style.backgroundColor='#218838'" 
+                        onmouseout="this.style.backgroundColor='#28a745'">
+                    <i class="fas fa-file-csv"></i> Export CSV
+                </button>
             </div>
         </div>
 
