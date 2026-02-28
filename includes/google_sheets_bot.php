@@ -6,15 +6,15 @@ function getBotTeachersFromSheets() {
     try {
         $client = new Google_Client();
         $client->setAuthConfig(__DIR__ . '/../credentials.json');
-        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
+        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY); // Changed to READONLY
         
         $service = new Google_Service_Sheets($client);
         
-        // IMPORTANT: Replace with your actual spreadsheet ID
+        // Get spreadsheet ID from environment variable
         $spreadsheetId = getenv("GOOGLE_SHEETS_ID") ?: ($_ENV["GOOGLE_SHEETS_ID"] ?? $_SERVER["GOOGLE_SHEETS_ID"] ?? null);
         
         if (!$spreadsheetId) {
-            error_log("Google Sheets ID not set");
+            error_log("Google Sheets ID not set in environment variables");
             return [];
         }
         
