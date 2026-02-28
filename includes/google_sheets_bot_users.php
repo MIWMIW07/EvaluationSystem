@@ -1,12 +1,12 @@
 <?php
-// includes/google_sheets_bot_users.php - UPDATED
+// includes/google_sheets_bot_users.php - FINAL CLEAN VERSION
 require_once __DIR__ . '/../vendor/autoload.php';
 
 function getBotUsersFromSheets() {
     try {
         $client = new Google_Client();
         $client->setAuthConfig(__DIR__ . '/../credentials.json');
-        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY); // Changed to READONLY
+        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
         
         $service = new Google_Service_Sheets($client);
         
@@ -37,7 +37,6 @@ function getBotUsersFromSheets() {
             }
         }
         
-        error_log("getBotUsersFromSheets found " . count($users) . " users");
         return $users;
         
     } catch (Exception $e) {
@@ -87,7 +86,6 @@ function syncBotUsersToDatabase($pdo) {
         }
     }
     
-    error_log("syncBotUsersToDatabase: Successfully synced $count users");
     return $count;
 }
 ?>
