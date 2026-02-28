@@ -566,7 +566,6 @@ function safe_display($value, $default = 'N/A') {
 
         <div style="text-align: center;">
             <a href="bot_dashboard.php" class="btn">← Back to Dashboard</a>
-            <button onclick="window.print()" class="btn btn-secondary">🖨️ Print / Save as PDF</button>
         </div>
 
         <div class="footer">
