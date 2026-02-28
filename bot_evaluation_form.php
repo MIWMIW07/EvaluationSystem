@@ -15,7 +15,9 @@ $pdo = getPDO();
 // Get teacher information from URL
 $teacher_name = isset($_GET['teacher']) ? trim($_GET['teacher']) : '';
 $branch = isset($_GET['branch']) ? trim($_GET['branch']) : '';
+$department = isset($_GET['department']) ? trim($_GET['department']) : '';
 $specialization = isset($_GET['specialization']) ? trim($_GET['specialization']) : '';
+$subjects = isset($_GET['subjects']) ? trim($_GET['subjects']) : '';
 
 // Validate parameters
 if (empty($teacher_name) || empty($branch)) {
@@ -76,13 +78,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insert into database
         $insertStmt = $pdo->prepare("
             INSERT INTO bot_evaluations (
-                bot_username, bot_name, teacher_name, branch, area_of_specialization,
+                bot_username, bot_name, teacher_name, branch, department, area_of_specialization, subjects_handled,
                 a1, a2, a3, a4, a5, a6,
                 b1, b2, b3, b4, b5,
                 c1, c2, c3, c4, c5,
                 comments
             ) VALUES (
-                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?,
@@ -95,7 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['full_name'],
             $teacher_name,
             $branch,
+            $department,        // NEW
             $specialization,
+            $subjects,          // NEW
             $ratings['a1'], $ratings['a2'], $ratings['a3'], $ratings['a4'], $ratings['a5'], $ratings['a6'],
             $ratings['b1'], $ratings['b2'], $ratings['b3'], $ratings['b4'], $ratings['b5'],
             $ratings['c1'], $ratings['c2'], $ratings['c3'], $ratings['c4'], $ratings['c5'],
@@ -120,20 +124,20 @@ function safe_display($value, $default = '') {
 
 // Define questions
 $sectionA_questions = [
-    'A1' => 'Clear, engaging, well-paced; uses varied strategies to meet diverse needs.',
-    'A2' => 'Applies teaching strategy that caters learner\'s need in developing creative and critical thinking (Lower Order Thinking Skills to Higher Order Thinking Skills).',
-    'A3' => 'Curriculum Knowledge: Effective application of subject matter knowledge within and across curriculum areas.',
-    'A4' => 'Collaboration and Integration is evident to create real-life learning.',
-    'A5' => 'Possesses a command of language of instruction.',
-    'A6' => 'Uses differentiated, developmentally appropriate learning experiences to address learners\' gender, needs, strengths, interests and experiences.'
+    'A1' => 'Applies teaching strategy that caters learner\'s need in developing creative and critical thinking (Lower Order Thinking Skills to Higher Order Thinking Skills).',
+    'A2' => 'Curriculum Knowledge: Effective application of subject matter knowledge within and across curriculum areas.',
+    'A3' => 'Collaboration and Integration is evident to create real-life learning.',
+    'A4' => 'Possesses a command of language of instruction.',
+    'A5' => 'Uses differentiated, developmentally appropriate learning experiences to address learners\' gender, needs, strengths, interests and experiences.',
+    'A6' => 'Use a range of teaching strategies that enhance learner achievment in literacy and numeracy skills.'
 ];
 
 $sectionB_questions = [
-    'B1' => 'Maintains order effortlessly; routines are smooth and respectful.',
-    'B2' => 'Uses an approach that ensures student collaboration and participation in the class.',
-    'B3' => 'Uses appropriate teaching and learning methods.',
-    'B4' => 'Maintain supportive learning environments that nurture and inspire learners to participate, cooperate and collaborate in continued learning.',
-    'B5' => 'The teacher processes students\' understanding by asking clarifying or critical thinking questions related to the lesson being discussed.'
+    'B1' => 'Uses an approach that ensures student collaboration and participation in the class.',
+    'B2' => 'Uses appropriate teaching and learning methods.',
+    'B3' => 'Maintain supportive learning environments that nurture and inspire learners to participate, cooperate and collaborate in continued learning.',
+    'B4' => 'The teacher processes students\' understanding by asking clarifying or critical thinking questions related to the lesson being discussed.',
+    'B5' => 'Use strategies for providing timely, accurate and constructive feedback to improve learner performance'
 ];
 
 $sectionC_questions = [
@@ -492,9 +496,11 @@ $sectionC_questions = [
             <h3>👨‍🏫 Teacher Information</h3>
             <p><strong>Name:</strong> <?php echo safe_display($teacher_name); ?></p>
             <p><strong>Branch:</strong> <?php echo safe_display($branch); ?></p>
+            <p><strong>Department:</strong> <?php echo safe_display($department); ?></p>
             <p><strong>Area of Specialization:</strong> <?php echo safe_display($specialization); ?></p>
+            <p><strong>Subjects Handled:</strong> <?php echo safe_display($subjects); ?></p>
             <p><strong>Evaluator:</strong> <?php echo safe_display($_SESSION['full_name']); ?> (BOT)</p>
-        </div>
+        </div>   
 
         <div class="rating-scale">
             <div class="rating-item">4 - Excellent</div>
