@@ -470,7 +470,7 @@ function safe_display($value, $default = 'N/A') {
                                     <div class="teacher-status status-pending">
                                         ⏳ Pending Evaluation
                                     </div>
-                                    <a href="bot_evaluation_form.php?teacher=<?php echo urlencode($teacher['teacher_name']); ?>&branch=<?php echo urlencode($teacher['branch']); ?>&specialization=<?php echo urlencode($teacher['area_of_specialization']); ?>" class="btn btn-evaluate">Start Evaluation</a>
+                                    <a href="bot_evaluation_form.php?teacher=<?php echo urlencode($teacher['teacher_name']); ?>&branch=<?php echo urlencode($teacher['branch']); ?>&department=<?php echo urlencode($teacher['department']); ?>&specialization=<?php echo urlencode($teacher['area_of_specialization']); ?>&subjects=<?php echo urlencode($teacher['subjects_handled']); ?>" class="btn btn-evaluate">Start Evaluation</a>
                                 <?php endif; ?>
                             </div>
                         </div>
