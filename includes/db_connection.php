@@ -92,12 +92,21 @@ class HybridDataManager {
         }
 
         // If not found in database and user type is student, try Google Sheets
-        if ($userType === 'student' && $this->sheetsService) {
-            $student = $this->findStudent($username, $password);
-            if ($student) {
-                return ['id' => $student['student_id'], 'type' => 'student'];
-            }
-        }
+if ($userType === 'student' && $this->sheetsService) {
+    $student = $this->findStudent($username, $password);
+    if ($student) {
+        return [
+            'id' => $student['student_id'],
+            'type' => 'student',
+            'full_name' => $student['full_name'],
+            'student_data' => [
+                'student_id' => $student['student_id'],
+                'section' => $student['section'],
+                'program' => $student['program']
+            ]
+        ];
+    }
+}
 
         return false;
     }
