@@ -107,15 +107,12 @@ function generateBotSummaryReport($pdo, $teacherName) {
     $allComments = [];
     
     foreach ($evaluations as $eval) {
-        // Section A average
         $aAvg = ($eval['a1'] + $eval['a2'] + $eval['a3'] + $eval['a4'] + $eval['a5'] + $eval['a6']) / 6;
         $aSum += $aAvg;
         
-        // Section B average
         $bAvg = ($eval['b1'] + $eval['b2'] + $eval['b3'] + $eval['b4'] + $eval['b5']) / 5;
         $bSum += $bAvg;
         
-        // Section C average
         $cAvg = ($eval['c1'] + $eval['c2'] + $eval['c3'] + $eval['c4'] + $eval['c5']) / 5;
         $cSum += $cAvg;
         
@@ -130,32 +127,39 @@ function generateBotSummaryReport($pdo, $teacherName) {
     
     $totalScore = ($aOverall * 0.40) + ($bOverall * 0.30) + ($cOverall * 0.30);
     
-    // Generate HTML report
+    // Generate HTML report - same style as student reports
     $html = '
     <html>
     <head>
         <title>BOT Evaluation Summary - ' . htmlspecialchars($teacherName) . '</title>
         <style>
             body { font-family: Arial, sans-serif; margin: 1in; }
-            h1 { color: #800000; text-align: center; }
-            h2 { color: #800000; border-bottom: 2px solid #800000; }
+            h1 { color: #800000; text-align: center; border-bottom: 2px solid #800000; padding-bottom: 10px; }
+            h2 { color: #800000; border-bottom: 1px solid #d4af37; padding-bottom: 5px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .school-name { font-size: 18pt; font-weight: bold; color: #800000; }
             table { border-collapse: collapse; width: 100%; margin: 20px 0; }
             th { background: #800000; color: white; padding: 10px; }
             td { padding: 8px; border: 1px solid #999; }
-            .summary { background: #f9f5eb; padding: 20px; border-radius: 8px; margin: 20px 0; }
-            .score { font-size: 24px; font-weight: bold; color: #800000; }
-            .rating { display: inline-block; padding: 5px 15px; background: #800000; color: white; border-radius: 20px; }
+            .summary { background: #f9f5eb; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #800000; }
+            .score { font-size: 24px; font-weight: bold; color: #800000; text-align: center; }
+            .rating { display: inline-block; padding: 5px 20px; background: #800000; color: white; border-radius: 20px; font-weight: bold; }
             .comments { background: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #800000; }
-            .footer { text-align: center; margin-top: 30px; color: #666; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 10pt; border-top: 1px solid #ccc; padding-top: 10px; }
         </style>
     </head>
     <body>
-        <h1>BOT Classroom Observation Summary Report</h1>
+        <div class="header">
+            <div class="school-name">PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.</div>
+            <div>GMA-BRANCH</div>
+            <h1>BOT Classroom Observation Summary Report</h1>
+        </div>
         
         <div class="summary">
             <h2>Teacher Information</h2>
             <p><strong>Name:</strong> ' . htmlspecialchars($teacherName) . '</p>
             <p><strong>Branch:</strong> ' . htmlspecialchars($evaluations[0]['branch']) . '</p>
+            <p><strong>Department:</strong> ' . htmlspecialchars($evaluations[0]['department']) . '</p>
             <p><strong>Specialization:</strong> ' . htmlspecialchars($evaluations[0]['area_of_specialization']) . '</p>
             <p><strong>Total Evaluators:</strong> ' . $totalEvals . '</p>
             <p><strong>Report Generated:</strong> ' . date('F j, Y \a\t g:i A') . '</p>
@@ -166,26 +170,30 @@ function generateBotSummaryReport($pdo, $teacherName) {
             <tr>
                 <th>Indicator</th>
                 <th>Average Score</th>
+                <th>Weight</th>
                 <th>Weighted Score</th>
             </tr>
             <tr>
-                <td>Instructional Competence (40%)</td>
+                <td>Instructional Competence</td>
                 <td>' . number_format($aOverall, 2) . '</td>
+                <td>40%</td>
                 <td>' . number_format($aOverall * 0.40, 2) . '</td>
             </tr>
             <tr>
-                <td>Classroom Management (30%)</td>
+                <td>Classroom Management</td>
                 <td>' . number_format($bOverall, 2) . '</td>
+                <td>30%</td>
                 <td>' . number_format($bOverall * 0.30, 2) . '</td>
             </tr>
             <tr>
-                <td>Professionalism (30%)</td>
+                <td>Professionalism</td>
                 <td>' . number_format($cOverall, 2) . '</td>
+                <td>30%</td>
                 <td>' . number_format($cOverall * 0.30, 2) . '</td>
             </tr>
             <tr style="background: #f0e6e6; font-weight: bold;">
-                <td>TOTAL SCORE</td>
-                <td colspan="2" style="text-align: center; font-size: 18px;">' . number_format($totalScore, 2) . '</td>
+                <td colspan="3" style="text-align: right;">TOTAL SCORE</td>
+                <td>' . number_format($totalScore, 2) . '</td>
             </tr>
         </table>
         
@@ -235,7 +243,7 @@ function generateBotSummaryReport($pdo, $teacherName) {
     
     $html .= '
         <div class="footer">
-            <p>Generated by PHILTECH GMA Evaluation System</p>
+            <p>Generated by PHILTECH GMA Teacher Evaluation System</p>
         </div>
     </body>
     </html>';
