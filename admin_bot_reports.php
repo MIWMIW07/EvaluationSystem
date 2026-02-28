@@ -712,7 +712,6 @@ function formatBytes($bytes) {
                         <td>
                             <?php if ($teacher['evaluation_count'] > 0): ?>
                                 <button class="action-btn" onclick="generateReport('<?php echo safe_display($teacher['teacher_name']); ?>')">Generate Report</button>
-                                <button class="action-btn secondary" onclick="viewDetails('<?php echo safe_display($teacher['teacher_name']); ?>')">Details</button>
                             <?php else: ?>
                                 <button class="action-btn" disabled style="opacity: 0.5;">No Data</button>
                             <?php endif; ?>
@@ -722,37 +721,6 @@ function formatBytes($bytes) {
                 </tbody>
             </table>
         </div>
-
-        <!-- Recent Evaluations -->
-        <?php if (!empty($recent)): ?>
-        <div class="section">
-            <h2>🔄 Recent BOT Evaluations</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Evaluator</th>
-                        <th>Teacher</th>
-                        <th>Branch</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($recent as $eval): ?>
-                    <tr>
-                        <td><?php echo date('M d, Y g:i A', strtotime($eval['created_at'])); ?></td>
-                        <td><?php echo safe_display($eval['evaluator_name']); ?></td>
-                        <td><strong><?php echo safe_display($eval['teacher_name']); ?></strong></td>
-                        <td><?php echo safe_display($eval['branch']); ?></td>
-                        <td>
-                            <a href="bot_view_evaluation.php?id=<?php echo $eval['id']; ?>" target="_blank" class="action-btn secondary" style="text-decoration: none;">View</a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php endif; ?>
     </div>
 
     <!-- Report Generation Modal -->
