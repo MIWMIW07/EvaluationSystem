@@ -906,7 +906,7 @@ function formatBytes($bytes) {
                 formData.append('generate_report', '1');
                 formData.append('teacher_name', teacherName);
                 
-                const response = await fetch('', {
+                const response = await fetch('bot_reports_generator.php', {
                     method: 'POST',
                     body: formData
                 });
