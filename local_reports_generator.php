@@ -100,19 +100,36 @@ function getOverallInterpretation($score) {
 // Function to convert image to base64 for embedding
 function imageToBase64($path) {
     if (!file_exists($path)) {
+        error_log("Image not found: " . $path);
         return false;
     }
     
-    $type = pathinfo($path, PATHINFO_EXTENSION);
     $data = file_get_contents($path);
     if ($data === false) {
+        error_log("Failed to read image: " . $path);
         return false;
     }
     
-    return 'data:image/' . $type . ';base64,' . base64_encode($data);
+    // Get file extension
+    $extension = pathinfo($path, PATHINFO_EXTENSION);
+    $mimeType = '';
+    
+    switch(strtolower($extension)) {
+        case 'png':
+            $mimeType = 'image/png';
+            break;
+        case 'jpg':
+        case 'jpeg':
+            $mimeType = 'image/jpeg';
+            break;
+        default:
+            $mimeType = 'image/png';
+    }
+    
+    return 'data:' . $mimeType . ';base64,' . base64_encode($data);
 }
 
-// Function to create Word document content with A4 sizing
+// Function to create Word document content
 function createWordDocument($content, $filename) {
     // Word document header with proper XML structure for A4 paper
     $html = '<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40">
@@ -123,267 +140,161 @@ function createWordDocument($content, $filename) {
             /* A4 Paper Settings */
             @page {
                 size: A4;
-                margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+                margin: 2.54cm 3.17cm 2.54cm 3.17cm;
             }
             
             body { 
                 font-family: "Arial", sans-serif; 
                 margin: 0;
                 padding: 0;
-                width: 100%;
                 line-height: 1.5;
-                background: white;
             }
             
-            /* Container for proper centering */
-            .container {
-                max-width: 100%;
-                margin: 0 auto;
-                padding: 0;
+            /* Center all tables */
+            table {
+                margin-left: auto;
+                margin-right: auto;
+                width: 100%;
+                border-collapse: collapse;
             }
             
-            /* Header Styles */
-            h1 { 
-                color: #800000; 
-                font-size: 24pt; 
-                text-align: center; 
-                margin: 10px 0 20px 0;
+            /* Header styles */
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            
+            .header-content {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+                margin-bottom: 15px;
+            }
+            
+            .school-name {
+                font-size: 18pt;
                 font-weight: bold;
-                width: 100%;
-            }
-            
-            h2 { 
-                color: #800000; 
-                font-size: 18pt; 
-                border-bottom: 2px solid #800000; 
-                padding-bottom: 8px;
-                margin: 25px 0 20px 0;
-                text-align: center;
-                width: 100%;
-            }
-            
-            h3 { 
-                color: #A52A2A; 
-                font-size: 14pt; 
-                margin: 20px 0 15px 0;
-                text-align: center;
-                width: 100%;
-            }
-            
-            h4 {
-                color: #666;
-                font-size: 12pt;
-                margin: 15px 0 10px 0;
-                text-align: center;
-                width: 100%;
-            }
-            
-            /* Table Styles - Perfectly Centered */
-            table { 
-                border-collapse: collapse; 
-                width: 100%; 
-                margin: 15px auto; 
-                table-layout: fixed;
-                border: 1px solid #999;
-            }
-            
-            th { 
-                background: #800000; 
-                color: white;
-                font-weight: bold; 
-                padding: 12px; 
-                border: 1px solid #660000; 
-                text-align: center;
-                vertical-align: middle;
-            }
-            
-            td { 
-                padding: 10px; 
-                border: 1px solid #999; 
-                vertical-align: top; 
-            }
-            
-            /* Header Section */
-            .header { 
-                text-align: center; 
-                margin-bottom: 20px; 
-                width: 100%;
-            }
-            
-            .header-content { 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                gap: 30px; 
-                margin: 0 auto 10px auto;
-                width: fit-content;
-            }
-            
-            .school-name { 
-                font-size: 24pt; 
-                font-weight: bold; 
                 color: #800000;
-                line-height: 1.3;
                 text-align: center;
             }
             
-            /* Signature Table */
-            .signature-table { 
-                width: 80%; 
-                margin: 40px auto 20px auto; 
-                border: none; 
+            .logo {
+                width: 100px;
+                height: 100px;
+                object-fit: contain;
+                display: inline-block;
             }
             
-            .signature-table td { 
-                border: none; 
-                text-align: center; 
-                width: 50%; 
-                padding: 20px;
-                vertical-align: middle;
-            }
-            
-            .signature-img { 
-                width: 200px; 
-                height: 80px; 
-                object-fit: contain; 
-                margin: 10px auto;
-                display: block;
-            }
-            
-            /* Stat Box - Centered */
-            .stat-box { 
-                background: #f8f9fa; 
-                padding: 15px 25px; 
-                margin: 20px auto; 
-                border: 1px solid #dee2e6; 
-                border-radius: 8px;
-                width: 70%;
-                text-align: left;
-            }
-            
-            .stat-box p {
-                margin: 5px 0;
-            }
-            
-            /* Logo */
-            .logo { 
-                width: 100px; 
-                height: 100px; 
-                object-fit: contain; 
-            }
-            
-            /* Signature Names */
-            .signature-name { 
-                font-weight: bold; 
-                font-size: 14pt; 
-                margin: 5px 0;
-                color: #333;
-            }
-            
-            .signature-title { 
-                color: #666; 
-                font-size: 12pt; 
-            }
-            
-            /* Page Break */
-            .page-break { 
-                page-break-after: always; 
-            }
-            
-            /* Footer */
-            .footer { 
-                text-align: center; 
-                font-size: 10pt; 
-                color: #666; 
-                margin-top: 40px; 
-                border-top: 1px solid #ccc; 
-                padding-top: 15px;
+            /* Signature table */
+            .signature-table {
                 width: 100%;
+                margin-top: 50px;
+                border: none;
             }
             
-            /* Comment Boxes */
-            .positive-comment { 
-                background: #d4edda; 
-                padding: 15px 20px; 
-                margin: 10px auto; 
-                border-left: 5px solid #28a745; 
-                border-radius: 0 8px 8px 0;
-                width: 90%;
+            .signature-table td {
+                border: none;
+                text-align: center;
+                width: 50%;
+                padding: 10px;
             }
             
-            .negative-comment { 
-                background: #fff3cd; 
-                padding: 15px 20px; 
-                margin: 10px auto; 
-                border-left: 5px solid #ffc107; 
-                border-radius: 0 8px 8px 0;
-                width: 90%;
+            .signature-img {
+                width: 200px;
+                height: 70px;
+                object-fit: contain;
+                display: block;
+                margin: 10px auto;
             }
             
-            /* Rating Scale */
+            /* Page break */
+            .page-break {
+                page-break-after: always;
+            }
+            
+            /* Center headings */
+            h1, h2, h3 {
+                text-align: center;
+                color: #800000;
+            }
+            
+            h1 {
+                font-size: 24pt;
+                margin: 20px 0;
+            }
+            
+            h2 {
+                font-size: 18pt;
+                border-bottom: 2px solid #800000;
+                padding-bottom: 8px;
+            }
+            
+            /* Stat box */
+            .stat-box {
+                background: #f8f9fa;
+                padding: 15px;
+                margin: 20px auto;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                width: 80%;
+            }
+            
+            /* Comment styles */
+            .positive-comment {
+                background: #d4edda;
+                padding: 12px;
+                margin: 8px 0;
+                border-left: 5px solid #28a745;
+            }
+            
+            .negative-comment {
+                background: #fff3cd;
+                padding: 12px;
+                margin: 8px 0;
+                border-left: 5px solid #ffc107;
+            }
+            
+            /* Fix for image rendering in Word */
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+            
+            /* Table styles */
+            th {
+                background: #800000;
+                color: white;
+                padding: 12px;
+                border: 1px solid #660000;
+            }
+            
+            td {
+                padding: 10px;
+                border: 1px solid #999;
+                vertical-align: top;
+            }
+            
+            /* Rating scale */
             .rating-scale {
                 text-align: center;
-                margin: 20px auto;
-                font-size: 11pt;
-                color: #666;
-                width: 100%;
-            }
-            
-            /* Text Alignment Classes */
-            .text-center {
-                text-align: center !important;
-            }
-            
-            .text-right {
-                text-align: right !important;
-            }
-            
-            .text-left {
-                text-align: left !important;
-            }
-            
-            /* Centered Container for Tables */
-            .centered-table-container {
-                width: 100%;
-                display: flex;
-                justify-content: center;
-            }
-            
-            /* Column Widths */
-            .col-indicator { width: 25%; }
-            .col-rating { width: 10%; }
-            .col-description { width: 20%; }
-            .col-interpretation { width: 45%; }
-            
-            /* Summary Report Header */
-            .summary-report-header {
-                page-break-before: always;
-                margin-top: 0;
-            }
-            
-            /* Horizontal Rule */
-            hr {
-                border: 2px solid #800000;
-                margin: 15px 0 20px 0;
-                width: 100%;
+                font-size: 10pt;
+                margin: 20px 0;
             }
         </style>
     </head>
     <body>
-        <div class="container">
-            ' . $content . '
-        </div>
+        ' . $content . '
     </body>
     </html>';
     
-    // Save as .doc file
     file_put_contents($filename, $html);
     return true;
 }
 
-// Function to generate evaluation cover page HTML with embedded images
+// Function to generate evaluation cover page HTML
 function getCoverPageHTML($teacherName, $program, $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore) {
-    // Get embedded images as base64
+    // Convert images to base64
     $logoBase64 = imageToBase64(__DIR__ . '/images/logo-original.png');
     $signature1Base64 = imageToBase64(__DIR__ . '/images/Picture1.png');
     $signature2Base64 = imageToBase64(__DIR__ . '/images/Picture2.png');
@@ -395,19 +306,19 @@ function getCoverPageHTML($teacherName, $program, $teachingScore, $managementSco
     if ($logoBase64) {
         $logoHtml = '<img src="' . $logoBase64 . '" class="logo" alt="School Logo">';
     } else {
-        $logoHtml = '<div style="width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 1px dashed #999; margin: 0 auto;">Logo</div>';
+        $logoHtml = '<div style="width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border: 1px dashed #800000;">Logo</div>';
     }
     
     if ($signature1Base64) {
         $signature1Html = '<img src="' . $signature1Base64 . '" class="signature-img" alt="Signature of Joanne P. Castro">';
     } else {
-        $signature1Html = '<div style="height: 60px; width: 200px; margin: 10px auto; color: #999; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">(Signature)</div>';
+        $signature1Html = '<div style="height: 70px; width: 200px; margin: 0 auto; border-bottom: 2px solid #800000;"></div>';
     }
     
     if ($signature2Base64) {
         $signature2Html = '<img src="' . $signature2Base64 . '" class="signature-img" alt="Signature of Myra V. Jumantoc">';
     } else {
-        $signature2Html = '<div style="height: 60px; width: 200px; margin: 10px auto; color: #999; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">(Signature)</div>';
+        $signature2Html = '<div style="height: 70px; width: 200px; margin: 0 auto; border-bottom: 2px solid #800000;"></div>';
     }
     
     $html = '
@@ -416,78 +327,75 @@ function getCoverPageHTML($teacherName, $program, $teachingScore, $managementSco
             ' . $logoHtml . '
             <div>
                 <div class="school-name">PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.</div>
-                <div style="font-size: 14pt; color: #666; margin-top: 5px; text-align: center;">GMA-BRANCH (2ND Semester 2025-2026)</div>
+                <div style="font-size: 14pt; color: #666; margin-top: 5px;">GMA-BRANCH (2ND Semester 2025-2026)</div>
             </div>
         </div>
-        <hr>
+        <hr style="border: 2px solid #800000; margin: 20px 0;">
         <h1>Teacher Evaluation by the students result</h1>
     </div>
     
-    <div class="centered-table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th class="col-indicator">Indicators</th>
-                    <th class="col-rating">Rating</th>
-                    <th class="col-description">Description</th>
-                    <th class="col-interpretation">Interpretation</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>1. Teaching Competencies</strong></td>
-                    <td class="text-center"><strong>' . number_format($teachingScore, 2) . '</strong></td>
-                    <td class="text-center">' . getRatingDescription($teachingScore) . '</td>
-                    <td>' . getTeachingInterpretation($teachingScore) . '</td>
-                </tr>
-                <tr>
-                    <td><strong>2. Management Skills</strong></td>
-                    <td class="text-center"><strong>' . number_format($managementScore, 2) . '</strong></td>
-                    <td class="text-center">' . getRatingDescription($managementScore) . '</td>
-                    <td>' . getManagementInterpretation($managementScore) . '</td>
-                </tr>
-                <tr>
-                    <td><strong>3. Guidance Skills</strong></td>
-                    <td class="text-center"><strong>' . number_format($guidanceScore, 2) . '</strong></td>
-                    <td class="text-center">' . getRatingDescription($guidanceScore) . '</td>
-                    <td>' . getGuidanceInterpretation($guidanceScore) . '</td>
-                </tr>
-                <tr>
-                    <td><strong>4. Personal and Social Qualities/Skills</strong></td>
-                    <td class="text-center"><strong>' . number_format($personalScore, 2) . '</strong></td>
-                    <td class="text-center">' . getRatingDescription($personalScore) . '</td>
-                    <td>' . getPersonalInterpretation($personalScore) . '</td>
-                </tr>
-                <tr style="background: #f0e6e6;">
-                    <td class="text-center"><strong style="font-size: 12pt;">OVERALL PERFORMANCE</strong></td>
-                    <td class="text-center"><strong style="font-size: 12pt;">' . number_format($overallScore, 2) . '</strong></td>
-                    <td class="text-center"><strong>' . getRatingDescription($overallScore) . '</strong></td>
-                    <td>' . getOverallInterpretation($overallScore) . '</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Indicators</th>
+                <th style="width: 10%;">Rating</th>
+                <th style="width: 20%;">Description</th>
+                <th style="width: 45%;">Interpretation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>1. Teaching Competencies</strong></td>
+                <td style="text-align: center;"><strong>' . number_format($teachingScore, 2) . '</strong></td>
+                <td>' . getRatingDescription($teachingScore) . '</td>
+                <td>' . getTeachingInterpretation($teachingScore) . '</td>
+            </tr>
+            <tr>
+                <td><strong>2. Management Skills</strong></td>
+                <td style="text-align: center;"><strong>' . number_format($managementScore, 2) . '</strong></td>
+                <td>' . getRatingDescription($managementScore) . '</td>
+                <td>' . getManagementInterpretation($managementScore) . '</td>
+            </tr>
+            <tr>
+                <td><strong>3. Guidance Skills</strong></td>
+                <td style="text-align: center;"><strong>' . number_format($guidanceScore, 2) . '</strong></td>
+                <td>' . getRatingDescription($guidanceScore) . '</td>
+                <td>' . getGuidanceInterpretation($guidanceScore) . '</td>
+            </tr>
+            <tr>
+                <td><strong>4. Personal and Social Qualities/Skills</strong></td>
+                <td style="text-align: center;"><strong>' . number_format($personalScore, 2) . '</strong></td>
+                <td>' . getRatingDescription($personalScore) . '</td>
+                <td>' . getPersonalInterpretation($personalScore) . '</td>
+            </tr>
+            <tr style="background: #f0e6e6;">
+                <td style="font-weight: bold;">OVERALL PERFORMANCE</td>
+                <td style="text-align: center; font-weight: bold;">' . number_format($overallScore, 2) . '</td>
+                <td style="font-weight: bold;">' . getRatingDescription($overallScore) . '</td>
+                <td>' . getOverallInterpretation($overallScore) . '</td>
+            </tr>
+        </tbody>
+    </table>
     
-    <div class="rating-scale">
-        <strong>Rating Scale:</strong> 5 - Outstanding | 4 - Very Satisfactory | 3 - Satisfactory | 2 - Fair | 1 - Poor
-    </div>
+    <p class="rating-scale"><strong>Rating Scale:</strong> 5 - Outstanding | 4 - Very Satisfactory | 3 - Satisfactory | 2 - Fair | 1 - Poor</p>
     
     <table class="signature-table">
         <tr>
             <td>
                 <div style="font-size: 14pt; font-weight: bold; margin-bottom: 15px;">TABULATED BY:</div>
                 ' . $signature1Html . '
-                <div class="signature-name">Joanne P. Castro</div>
-                <div class="signature-title">Guidance Associate</div>
+                <div style="font-weight: bold; font-size: 12pt; margin-top: 5px;">Joanne P. Castro</div>
+                <div style="color: #666;">Guidance Associate</div>
             </td>
             <td>
                 <div style="font-size: 14pt; font-weight: bold; margin-bottom: 15px;">NOTED BY:</div>
                 ' . $signature2Html . '
-                <div class="signature-name">Myra V. Jumantoc</div>
-                <div class="signature-title">HR Head</div>
+                <div style="font-weight: bold; font-size: 12pt; margin-top: 5px;">Myra V. Jumantoc</div>
+                <div style="color: #666;">HR Head</div>
             </td>
         </tr>
-    </table>';
+    </table>
+    <div class="page-break"></div>';
     
     return $html;
 }
@@ -634,9 +542,6 @@ function generateIndividualReport($evaluation, $outputPath) {
         $content = getCoverPageHTML($evaluation['teacher_name'], $evaluation['program'], 
                                    $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore);
         
-        // Add page break before detailed results
-        $content .= '<div class="page-break"></div>';
-        
         // Student Info
         $content .= '
         <h2>Detailed Evaluation Results</h2>
@@ -685,7 +590,6 @@ function generateIndividualReport($evaluation, $outputPath) {
 
         foreach ($questions as $category => $categoryQuestions) {
             $content .= '<h3>' . $category . '</h3>';
-            $content .= '<div class="centered-table-container">';
             $content .= '<table>';
             $content .= '<tr><th style="width: 10%">No.</th><th style="width: 70%">Question</th><th style="width: 20%">Score</th></tr>';
             
@@ -696,24 +600,21 @@ function generateIndividualReport($evaluation, $outputPath) {
                 $questionCount++;
                 
                 $content .= '<tr>';
-                $content .= '<td class="text-center">' . $categoryNum . '.' . $qNum . '</td>';
+                $content .= '<td style="text-align: center;">' . $categoryNum . '.' . $qNum . '</td>';
                 $content .= '<td>' . $question . '</td>';
-                $content .= '<td class="text-center"><strong>' . $score . '</strong></td>';
+                $content .= '<td style="text-align: center;"><strong>' . $score . '</strong></td>';
                 $content .= '</tr>';
                 $qNum++;
             }
-            $content .= '</table>';
-            $content .= '</div><br>';
+            $content .= '</table><br>';
             $categoryNum++;
         }
 
         $averageScore = $questionCount > 0 ? $totalScore / $questionCount : 0;
         
-        $content .= '<div class="centered-table-container">';
-        $content .= '<table style="background: #ffe6cc; width: 60%;">';
-        $content .= '<tr><td class="text-right" style="font-weight: bold; font-size: 12pt;">AVERAGE SCORE:</td><td class="text-center" style="font-weight: bold; font-size: 12pt;">' . number_format($averageScore, 2) . '</td></tr>';
-        $content .= '</table>';
-        $content .= '</div><br>';
+        $content .= '<table style="background: #ffe6cc; width: 60%; margin: 20px auto;">';
+        $content .= '<tr><td style="text-align: right; font-weight: bold;">AVERAGE SCORE:</td><td style="text-align: center; font-weight: bold;">' . number_format($averageScore, 2) . '</td></tr>';
+        $content .= '</table><br>';
 
         // Comments section
         $positiveComments = !empty(trim($evaluation['positive_comments'] ?? '')) ? $evaluation['positive_comments'] : '';
@@ -736,7 +637,7 @@ function generateIndividualReport($evaluation, $outputPath) {
         $content .= '</div>';
 
         // Add footer
-        $content .= '<div class="footer">';
+        $content .= '<div class="footer" style="text-align: center; margin-top: 30px; color: #666; border-top: 1px solid #ccc; padding-top: 10px;">';
         $content .= 'Generated by the Teacher Evaluation System on ' . date('F j, Y \a\t g:i A');
         $content .= '</div>';
 
@@ -825,9 +726,6 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
         // Start building HTML content
         $content = getCoverPageHTML($teacherName, $program, $teachingScore, $managementScore, $guidanceScore, $personalScore, $overallScore);
         
-        // Add page break before summary report details
-        $content .= '<div class="page-break"></div>';
-        
         // Summary info
         $content .= '
         <h2>Summary Report - Detailed Results</h2>
@@ -850,29 +748,25 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
         $categoryNum = 1;
         foreach ($categories as $categoryName => $questionKeys) {
             $content .= '<h3>' . $categoryName . '</h3>';
-            $content .= '<div class="centered-table-container">';
             $content .= '<table>';
             $content .= '<tr><th style="width: 10%">No.</th><th style="width: 70%">Criteria</th><th style="width: 20%">Average Score</th></tr>';
             
             $qNum = 1;
             foreach ($questionKeys as $key) {
                 $content .= '<tr>';
-                $content .= '<td class="text-center">' . $categoryNum . '.' . $qNum . '</td>';
+                $content .= '<td style="text-align: center;">' . $categoryNum . '.' . $qNum . '</td>';
                 $content .= '<td>' . $questions[$key]['label'] . '</td>';
-                $content .= '<td class="text-center"><strong>' . number_format($questions[$key]['avg'], 2) . '</strong></td>';
+                $content .= '<td style="text-align: center;"><strong>' . number_format($questions[$key]['avg'], 2) . '</strong></td>';
                 $content .= '</tr>';
                 $qNum++;
             }
-            $content .= '</table>';
-            $content .= '</div><br>';
+            $content .= '</table><br>';
             $categoryNum++;
         }
 
-        $content .= '<div class="centered-table-container">';
-        $content .= '<table style="background: #ffe6cc; width: 60%;">';
-        $content .= '<tr><td class="text-right" style="font-weight: bold; font-size: 14pt;">OVERALL AVERAGE SCORE:</td><td class="text-center" style="font-weight: bold; font-size: 14pt;">' . number_format($overallScore, 2) . '</td></tr>';
-        $content .= '</table>';
-        $content .= '</div><br>';
+        $content .= '<table style="background: #ffe6cc; width: 60%; margin: 20px auto;">';
+        $content .= '<tr><td style="text-align: right; font-weight: bold;">OVERALL AVERAGE SCORE:</td><td style="text-align: center; font-weight: bold;">' . number_format($overallScore, 2) . '</td></tr>';
+        $content .= '</table><br>';
 
         // COMMENTS SECTION
         $allPositiveComments = [];
