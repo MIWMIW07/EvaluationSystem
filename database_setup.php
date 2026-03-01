@@ -244,7 +244,7 @@ function insertAllTeacherAssignments($pdo) {
         'ABM-11-SUNDAY CLASS' => ['MR. VALENZUELA', 'MR. ORNACHO', 'MRS. VELE', 'MR. ICABANDE', 'MR. MATILA', 'MR. RODRIGUEZ'],
         
         // Grade 12 SC
-        'HE-12-SUNDAY CLASS' => ['MS. GENTEROY', 'MS. OCTAVO', 'MR. ICABANDE', 'MS. GENTEROY'],
+        'HE-12-SUNDAY CLASS' => ['MS. GENTEROY', 'MS. OCTAVO', 'MR. ICABANDE'],
         'ICT-12-SUNDAY CLASS' => ['MS. OCTAVO', 'MR. ICABANDE', 'MR. ESPEÑA'],
         'HUMSS-12-SUNDAY CLASS' => ['MS. OCTAVO', 'MR. PATIAM', 'MRS. VELE', 'MR. ICABANDE', 'MR. LACERNA'],
         'ABM-12-SUNDAY CLASS' => ['MS. OCTAVO', 'MR. PATIAM', 'MR. ORNACHO', 'MR. ICABANDE', 'MR. LACERNA', 'MRS. VELE'],
