@@ -25,7 +25,7 @@ if (isset($_POST['generate_report']) && isset($_POST['teacher_name'])) {
 }
 
 function getBotReportsData($pdo) {
-    // Get all teachers with their BOT evaluation statistics - FIXED QUERY
+    // Get all teachers with their BOT evaluation statistics
     $stmt = $pdo->query("
         SELECT 
             bt.teacher_name,
@@ -64,59 +64,65 @@ function getBotReportsData($pdo) {
     ];
 }
 
+// FIXED: More flexible rating function with rounding
 function getDescriptiveRating($score) {
-    if ($score >= 3.25 && $score <= 4.00) return 'Distinguished';
-    if ($score >= 2.50 && $score <= 3.24) return 'Competent';
-    if ($score >= 1.75 && $score <= 2.49) return 'Progressing';
-    if ($score >= 1.00 && $score <= 1.74) return 'Needs Improvement';
+    $rounded = round($score, 2);
+    if ($rounded >= 3.25) return 'Distinguished';
+    if ($rounded >= 2.50) return 'Competent';
+    if ($rounded >= 1.75) return 'Progressing';
+    if ($rounded >= 1.00) return 'Needs Improvement';
     return 'Not Rated';
 }
 
 function getInstructionalInterpretation($score) {
-    if ($score >= 3.25) {
-        return 'The teacher demonstrates Distinguished instructional competence. Lessons are exceptionally well-prepared, clearly delivered, and enriched with varied effective strategies that cater to diverse learner needs. The teacher shows mastery of the subject matter and seamlessly connects lessons with real-life applications.';
-    } elseif ($score >= 2.50) {
-        return 'The teacher exhibits Competent instructional competence. Lessons are clearly discussed, and students are effectively engaged. The teacher demonstrates good command of the subject matter and uses suitable strategies to support learning.';
-    } elseif ($score >= 1.75) {
-        return 'The teacher shows Progressing instructional competence. Instructional methods are adequate, but further improvement in delivery, variety of strategies, and student engagement is encouraged.';
+    $rounded = round($score, 2);
+    if ($rounded >= 3.25) {
+        return 'The teacher demonstrates Distinguished instructional competence. Lessons are exceptionally well-prepared, clearly delivered, and enriched with varied effective strategies that cater to diverse learner needs.';
+    } elseif ($rounded >= 2.50) {
+        return 'The teacher exhibits Competent instructional competence. Lessons are clearly discussed, and students are effectively engaged.';
+    } elseif ($rounded >= 1.75) {
+        return 'The teacher shows Progressing instructional competence. Instructional methods are adequate, but further improvement is encouraged.';
     } else {
-        return 'The teacher\'s instructional competence Needs Improvement. Lessons may lack clear structure, engagement, or effective strategies. Immediate mentoring and professional development are highly recommended.';
+        return 'The teacher\'s instructional competence Needs Improvement. Immediate mentoring and professional development are highly recommended.';
     }
 }
 
 function getManagementInterpretation($score) {
-    if ($score >= 3.25) {
-        return 'The teacher demonstrates Distinguished classroom management skills. A well-disciplined, safe, and highly motivating classroom environment is consistently maintained. Students show exceptional respect and positive behavior.';
-    } elseif ($score >= 2.50) {
-        return 'The teacher shows Competent management ability. Classroom procedures are well-implemented, and a conducive learning environment is sustained. The teacher handles students with fairness and professionalism.';
-    } elseif ($score >= 1.75) {
-        return 'The teacher\'s management skills are Progressing. Classroom order and discipline are generally maintained, though consistency and proactive strategies can still be improved.';
+    $rounded = round($score, 2);
+    if ($rounded >= 3.25) {
+        return 'The teacher demonstrates Distinguished classroom management skills. A well-disciplined, safe, and highly motivating classroom environment is consistently maintained.';
+    } elseif ($rounded >= 2.50) {
+        return 'The teacher shows Competent management ability. Classroom procedures are well-implemented, and a conducive learning environment is sustained.';
+    } elseif ($rounded >= 1.75) {
+        return 'The teacher\'s management skills are Progressing. Classroom order and discipline are generally maintained.';
     } else {
-        return 'The teacher\'s management skills Need Improvement. The classroom environment may not be consistently conducive to learning. Immediate intervention and training are recommended.';
+        return 'The teacher\'s management skills Need Improvement. The classroom environment may not be consistently conducive to learning.';
     }
 }
 
 function getProfessionalismInterpretation($score) {
-    if ($score >= 3.25) {
-        return 'The teacher displays Distinguished professional and ethical qualities. Professionalism, emotional balance, and enthusiasm are consistently evident. The teacher maintains impeccable grooming, clear communication, and harmonious relationships.';
-    } elseif ($score >= 2.50) {
-        return 'The teacher exhibits Competent professional and social qualities. Professional conduct, good communication, and positive interpersonal skills are consistently observed.';
-    } elseif ($score >= 1.75) {
-        return 'The teacher shows Progressing professional qualities. The teacher interacts adequately but may still enhance professional presentation or emotional stability.';
+    $rounded = round($score, 2);
+    if ($rounded >= 3.25) {
+        return 'The teacher displays Distinguished professional and ethical qualities. Professionalism, emotional balance, and enthusiasm are consistently evident.';
+    } elseif ($rounded >= 2.50) {
+        return 'The teacher exhibits Competent professional and social qualities. Professional conduct and positive interpersonal skills are consistently observed.';
+    } elseif ($rounded >= 1.75) {
+        return 'The teacher shows Progressing professional qualities. The teacher interacts adequately but may still enhance professional presentation.';
     } else {
-        return 'The teacher\'s professional qualities Need Improvement. Professionalism or emotional balance may be lacking. Immediate development through mentoring is advised.';
+        return 'The teacher\'s professional qualities Need Improvement. Immediate development through mentoring is advised.';
     }
 }
 
 function getOverallInterpretation($score) {
-    if ($score >= 3.25) {
-        return 'The teacher\'s Overall Performance is Distinguished. This reflects exceptional competence across all areas — instructional competence, classroom management, and professionalism. The teacher consistently exceeds expectations and serves as an excellent role model.';
-    } elseif ($score >= 2.50) {
-        return 'The teacher\'s Overall Performance is Competent. The teacher meets and often exceeds expectations, demonstrating effective teaching, sound classroom management, and good professional conduct.';
-    } elseif ($score >= 1.75) {
-        return 'The teacher\'s Overall Performance is Progressing. The teacher meets minimum standards but would benefit from ongoing professional development in several areas.';
+    $rounded = round($score, 2);
+    if ($rounded >= 3.25) {
+        return 'The teacher\'s Overall Performance is Distinguished. This reflects exceptional competence across all areas — instructional competence, classroom management, and professionalism.';
+    } elseif ($rounded >= 2.50) {
+        return 'The teacher\'s Overall Performance is Competent. The teacher meets and often exceeds expectations across all areas.';
+    } elseif ($rounded >= 1.75) {
+        return 'The teacher\'s Overall Performance is Progressing. The teacher meets minimum standards but would benefit from ongoing professional development.';
     } else {
-        return 'The teacher\'s Overall Performance Needs Improvement. Immediate intervention and professional coaching are necessary to improve competency and effectiveness.';
+        return 'The teacher\'s Overall Performance Needs Improvement. Immediate intervention and professional coaching are necessary.';
     }
 }
 
@@ -165,34 +171,44 @@ function generateBotSummaryReport($pdo, $teacherName) {
     
     $totalScore = ($aOverall * 0.40) + ($bOverall * 0.30) + ($cOverall * 0.30);
     
-    // Generate HTML report with rating scale
+    // Get logo
+    $logoBase64 = imageToBase64(__DIR__ . '/images/logo-original.png');
+    $logoHtml = $logoBase64 ? '<img src="' . $logoBase64 . '" style="width: 100px; height: 100px; object-fit: contain;">' : '';
+    
+    // Generate HTML for Word document
     $html = '
-    <html>
+    <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns:m="http://schemas.microsoft.com/office/2004/12/omml" xmlns="http://www.w3.org/TR/REC-html40">
     <head>
-        <title>BOT Evaluation Summary - ' . htmlspecialchars($teacherName) . '</title>
+        <meta charset="UTF-8">
+        <title>BOT Evaluation Report - ' . htmlspecialchars($teacherName) . '</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 1in; }
+            @page { size: A4; margin: 2.54cm 3.17cm; }
+            body { font-family: Arial, sans-serif; line-height: 1.5; margin: 0; padding: 0; }
+            .header { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; }
+            .school-name { font-size: 18pt; font-weight: bold; color: #800000; text-align: center; }
             h1 { color: #800000; text-align: center; border-bottom: 2px solid #800000; padding-bottom: 10px; }
             h2 { color: #800000; border-bottom: 1px solid #d4af37; padding-bottom: 5px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .school-name { font-size: 18pt; font-weight: bold; color: #800000; }
             table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-            th { background: #800000; color: white; padding: 10px; }
-            td { padding: 8px; border: 1px solid #999; }
+            th { background: #800000; color: white; padding: 10px; border: 1px solid #660000; }
+            td { padding: 8px; border: 1px solid #999; vertical-align: top; }
             .summary { background: #f9f5eb; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #800000; }
-            .score { font-size: 24px; font-weight: bold; color: #800000; text-align: center; }
             .rating { display: inline-block; padding: 5px 20px; background: #800000; color: white; border-radius: 20px; font-weight: bold; }
             .comments { background: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #800000; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 10pt; border-top: 1px solid #ccc; padding-top: 10px; }
             .rating-scale { margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 8px; }
-            .rating-scale th { background: #800000; color: white; padding: 8px; }
-            .rating-scale td { padding: 8px; border: 1px solid #ddd; }
+            .footer { text-align: center; margin-top: 30px; color: #666; border-top: 1px solid #ccc; padding-top: 10px; font-size: 9pt; }
+            .page-break { page-break-after: always; }
         </style>
     </head>
     <body>
-        <div class="header">
-            <div class="school-name">PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.</div>
-            <div>GMA-BRANCH</div>
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                ' . $logoHtml . '
+                <div>
+                    <div style="font-size: 18pt; font-weight: bold; color: #800000;">PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.</div>
+                    <div style="font-size: 12pt;">GMA-BRANCH</div>
+                </div>
+            </div>
+            <hr style="border: 2px solid #800000; margin: 20px 0;">
             <h1>BOT Classroom Observation Summary Report</h1>
         </div>
         
@@ -206,30 +222,14 @@ function generateBotSummaryReport($pdo, $teacherName) {
             <p><strong>Report Generated:</strong> ' . date('F j, Y \a\t g:i A') . '</p>
         </div>
         
-        <!-- ADDED: Rating Scale -->
         <div class="rating-scale">
-            <h3 style="color: #800000; margin-bottom: 10px;">Rating Scale</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <th style="background: #800000; color: white; padding: 8px;">Score Range</th>
-                    <th style="background: #800000; color: white; padding: 8px;">Descriptive Rating</th>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #ddd;">3.25 - 4.00</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #800000;">Distinguished</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #ddd;">2.50 - 3.24</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #28a745;">Competent</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #ddd;">1.75 - 2.49</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #ffc107;">Progressing</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #ddd;">1.00 - 1.74</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #dc3545;">Needs Improvement</td>
-                </tr>
+            <h3 style="color: #800000;">Rating Scale</h3>
+            <table>
+                <tr><th>Score Range</th><th>Descriptive Rating</th></tr>
+                <tr><td>3.25 - 4.00</td><td><strong style="color:#800000;">Distinguished</strong></td></tr>
+                <tr><td>2.50 - 3.24</td><td><strong style="color:#28a745;">Competent</strong></td></tr>
+                <tr><td>1.75 - 2.49</td><td><strong style="color:#ffc107;">Progressing</strong></td></tr>
+                <tr><td>1.00 - 1.74</td><td><strong style="color:#dc3545;">Needs Improvement</strong></td></tr>
             </table>
         </div>
         
@@ -305,62 +305,77 @@ function generateBotSummaryReport($pdo, $teacherName) {
     
     if (!empty($allComments)) {
         $html .= '<h2>Comments and Recommendations</h2>';
-        foreach ($allComments as $index => $comment) {
+        $commentNum = 1;
+        foreach ($allComments as $comment) {
             $html .= '<div class="comments">';
-            $html .= '<strong>Evaluator ' . ($index + 1) . ':</strong><br>';
+            $html .= '<strong>Evaluator ' . $commentNum . ':</strong><br>';
             $html .= nl2br(htmlspecialchars($comment));
             $html .= '</div>';
+            $commentNum++;
         }
     }
     
     $html .= '
         <div class="footer">
-            <p>Generated by PHILTECH GMA Teacher Evaluation System</p>
+            <p>Generated by PHILTECH GMA Teacher Evaluation System on ' . date('F j, Y \a\t g:i A') . '</p>
         </div>
     </body>
     </html>';
     
-    // Save to file
+    // Save as .doc file (Word document)
     $reportsDir = __DIR__ . '/reports/BOT Evaluation Reports/';
-    if (!file_exists($reportsDir)) {
-        mkdir($reportsDir, 0777, true);
-    }
+    if (!file_exists($reportsDir)) mkdir($reportsDir, 0777, true);
     
-    $filename = 'BOT_Summary_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $teacherName) . '_' . date('Ymd_His') . '.html';
-    $filepath = $reportsDir . $filename;
-    file_put_contents($filepath, $html);
+    $filename = 'BOT_Summary_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $teacherName) . '_' . date('Ymd_His') . '.doc';
+    file_put_contents($reportsDir . $filename, $html);
     
-    $webPath = 'reports/BOT Evaluation Reports/' . $filename;
-    
+    // Return JSON for AJAX
+    header('Content-Type: application/json');
     echo json_encode([
         'success' => true,
-        'filename' => $filename,
-        'path' => $webPath
+        'path' => 'reports/BOT Evaluation Reports/' . $filename
     ]);
+    exit;
+}
+
+function imageToBase64($path) {
+    if (!file_exists($path)) {
+        error_log("Image not found: " . $path);
+        return false;
+    }
+    
+    $data = file_get_contents($path);
+    if ($data === false) {
+        error_log("Failed to read image: " . $path);
+        return false;
+    }
+    
+    $extension = pathinfo($path, PATHINFO_EXTENSION);
+    $mimeType = '';
+    
+    switch(strtolower($extension)) {
+        case 'png':
+            $mimeType = 'image/png';
+            break;
+        case 'jpg':
+        case 'jpeg':
+            $mimeType = 'image/jpeg';
+            break;
+        default:
+            $mimeType = 'image/png';
+    }
+    
+    return 'data:' . $mimeType . ';base64,' . base64_encode($data);
 }
 
 $data = getBotReportsData($pdo);
 $teachers = $data['teachers'];
 $stats = $data['stats'];
 
-// Helper function for safe display
 function safe_display($value, $default = 'N/A') {
     return !empty($value) ? htmlspecialchars($value) : $default;
 }
-
-function formatBytes($bytes) {
-    if ($bytes >= 1073741824) {
-        return number_format($bytes / 1073741824, 2) . ' GB';
-    } elseif ($bytes >= 1048576) {
-        return number_format($bytes / 1048576, 2) . ' MB';
-    } elseif ($bytes >= 1024) {
-        return number_format($bytes / 1024, 2) . ' KB';
-    } else {
-        return $bytes . ' bytes';
-    }
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -516,10 +531,6 @@ function formatBytes($bytes) {
             padding: 12px;
             border-bottom: 1px solid #e0e0e0;
         }
-        td:last-child {
-            font-size: 0.9em;
-            line-height: 1.4;
-        }                                                                
 
         tr:hover {
             background: #f9f5eb;
@@ -588,14 +599,6 @@ function formatBytes($bytes) {
 
         .action-btn:hover {
             background: #660000;
-        }
-
-        .action-btn.secondary {
-            background: #17a2b8;
-        }
-
-        .action-btn.secondary:hover {
-            background: #138496;
         }
 
         .last-updated {
@@ -868,14 +871,12 @@ function formatBytes($bytes) {
                 
                 const data = await response.json();
                 
-                // Update last updated time
                 const now = new Date();
                 document.getElementById('lastUpdated').textContent = 
                     `Last updated: ${now.toLocaleTimeString()}`;
                 
                 showNotification('Data refreshed successfully!', 'success');
                 
-                // Reload page to show updated data
                 setTimeout(() => {
                     location.reload();
                 }, 1000);
@@ -906,7 +907,7 @@ function formatBytes($bytes) {
                 formData.append('generate_report', '1');
                 formData.append('teacher_name', teacherName);
                 
-                const response = await fetch('bot_reports_generator.php', {
+                const response = await fetch('', {
                     method: 'POST',
                     body: formData
                 });
@@ -929,7 +930,6 @@ function formatBytes($bytes) {
             }
         }
 
-        // UPDATED: Force download instead of opening in new tab
         function downloadReport() {
             if (currentReportPath) {
                 // Force download
@@ -939,13 +939,6 @@ function formatBytes($bytes) {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                
-                // Offer fallback
-                setTimeout(() => {
-                    if (confirm('Did the download start? If not, click OK to open in new tab.')) {
-                        window.open(currentReportPath, '_blank');
-                    }
-                }, 1000);
             }
         }
 
@@ -953,7 +946,6 @@ function formatBytes($bytes) {
             document.getElementById('reportModal').classList.remove('active');
         }
 
-        // Auto-refresh every 5 minutes
         setInterval(() => {
             refreshReports();
         }, 300000);
