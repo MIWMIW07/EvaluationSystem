@@ -25,36 +25,27 @@ if (isset($_POST['generate_report']) && isset($_POST['teacher_name'])) {
 }
 
 function getBotReportsData($pdo) {
-    // Get all teachers with their BOT evaluation statistics
+    // Get all teachers with their BOT evaluation statistics - FIXED QUERY
     $stmt = $pdo->query("
         SELECT 
             bt.teacher_name,
             bt.branch,
+            bt.department,
             bt.area_of_specialization,
             COUNT(be.id) as evaluation_count,
-            AVG((be.a1 + be.a2 + be.a3 + be.a4 + be.a5 + be.a6) / 6 * 0.40 +
-                (be.b1 + be.b2 + be.b3 + be.b4 + be.b5) / 5 * 0.30 +
-                (be.c1 + be.c2 + be.c3 + be.c4 + be.c5) / 5 * 0.30) as average_score,
+            AVG(
+                ((be.a1 + be.a2 + be.a3 + be.a4 + be.a5 + be.a6) / 6 * 0.40) +
+                ((be.b1 + be.b2 + be.b3 + be.b4 + be.b5) / 5 * 0.30) +
+                ((be.c1 + be.c2 + be.c3 + be.c4 + be.c5) / 5 * 0.30)
+            ) as average_score,
             MAX(be.created_at) as last_evaluation
         FROM bot_teachers bt
         LEFT JOIN bot_evaluations be ON bt.teacher_name = be.teacher_name
-        GROUP BY bt.teacher_name, bt.branch, bt.area_of_specialization
+        GROUP BY bt.teacher_name, bt.branch, bt.department, bt.area_of_specialization
         ORDER BY bt.teacher_name
     ");
     
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Get recent evaluations
-    $recentStmt = $pdo->query("
-        SELECT 
-            be.*,
-            u.full_name as evaluator_name
-        FROM bot_evaluations be
-        JOIN users u ON be.bot_username = u.username
-        ORDER BY be.created_at DESC
-        LIMIT 10
-    ");
-    $recent = $recentStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get statistics
     $statsStmt = $pdo->query("
@@ -68,7 +59,6 @@ function getBotReportsData($pdo) {
     
     return [
         'teachers' => $teachers,
-        'recent' => $recent,
         'stats' => $stats,
         'timestamp' => time()
     ];
@@ -127,7 +117,7 @@ function generateBotSummaryReport($pdo, $teacherName) {
     
     $totalScore = ($aOverall * 0.40) + ($bOverall * 0.30) + ($cOverall * 0.30);
     
-    // Generate HTML report - same style as student reports
+    // Generate HTML report with rating scale
     $html = '
     <html>
     <head>
@@ -146,6 +136,9 @@ function generateBotSummaryReport($pdo, $teacherName) {
             .rating { display: inline-block; padding: 5px 20px; background: #800000; color: white; border-radius: 20px; font-weight: bold; }
             .comments { background: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #800000; }
             .footer { text-align: center; margin-top: 30px; color: #666; font-size: 10pt; border-top: 1px solid #ccc; padding-top: 10px; }
+            .rating-scale { margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 8px; }
+            .rating-scale th { background: #800000; color: white; padding: 8px; }
+            .rating-scale td { padding: 8px; border: 1px solid #ddd; }
         </style>
     </head>
     <body>
@@ -163,6 +156,33 @@ function generateBotSummaryReport($pdo, $teacherName) {
             <p><strong>Specialization:</strong> ' . htmlspecialchars($evaluations[0]['area_of_specialization']) . '</p>
             <p><strong>Total Evaluators:</strong> ' . $totalEvals . '</p>
             <p><strong>Report Generated:</strong> ' . date('F j, Y \a\t g:i A') . '</p>
+        </div>
+        
+        <!-- ADDED: Rating Scale -->
+        <div class="rating-scale">
+            <h3 style="color: #800000; margin-bottom: 10px;">Rating Scale</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th style="background: #800000; color: white; padding: 8px;">Score Range</th>
+                    <th style="background: #800000; color: white; padding: 8px;">Descriptive Rating</th>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">3.25 - 4.00</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #800000;">Distinguished</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">2.50 - 3.24</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #28a745;">Competent</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">1.75 - 2.49</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #ffc107;">Progressing</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">1.00 - 1.74</td>
+                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #dc3545;">Needs Improvement</td>
+                </tr>
+            </table>
         </div>
         
         <h2>Overall Performance</h2>
@@ -254,19 +274,21 @@ function generateBotSummaryReport($pdo, $teacherName) {
         mkdir($reportsDir, 0777, true);
     }
     
-    $filename = $reportsDir . 'BOT_Summary_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $teacherName) . '_' . date('Ymd_His') . '.html';
-    file_put_contents($filename, $html);
+    $filename = 'BOT_Summary_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $teacherName) . '_' . date('Ymd_His') . '.html';
+    $filepath = $reportsDir . $filename;
+    file_put_contents($filepath, $html);
+    
+    $webPath = 'reports/BOT Evaluation Reports/' . $filename;
     
     echo json_encode([
         'success' => true,
-        'filename' => basename($filename),
-        'path' => 'reports/BOT Evaluation Reports/' . basename($filename)
+        'filename' => $filename,
+        'path' => $webPath
     ]);
 }
 
 $data = getBotReportsData($pdo);
 $teachers = $data['teachers'];
-$recent = $data['recent'];
 $stats = $data['stats'];
 
 // Helper function for safe display
@@ -667,6 +689,7 @@ function formatBytes($bytes) {
                     <tr>
                         <th>Teacher Name</th>
                         <th>Branch</th>
+                        <th>Department</th>
                         <th>Specialization</th>
                         <th>Evaluations</th>
                         <th>Average Score</th>
@@ -680,6 +703,7 @@ function formatBytes($bytes) {
                     <tr>
                         <td><strong><?php echo safe_display($teacher['teacher_name']); ?></strong></td>
                         <td><?php echo safe_display($teacher['branch']); ?></td>
+                        <td><?php echo safe_display($teacher['department'] ?? ''); ?></td>
                         <td><?php echo safe_display($teacher['area_of_specialization']); ?></td>
                         <td>
                             <?php if ($teacher['evaluation_count'] > 0): ?>
@@ -849,19 +873,28 @@ function formatBytes($bytes) {
             }
         }
 
+        // UPDATED: Force download instead of opening in new tab
         function downloadReport() {
             if (currentReportPath) {
-                window.open(currentReportPath, '_blank');
+                // Force download
+                const link = document.createElement('a');
+                link.href = currentReportPath;
+                link.download = currentReportPath.split('/').pop();
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Offer fallback
+                setTimeout(() => {
+                    if (confirm('Did the download start? If not, click OK to open in new tab.')) {
+                        window.open(currentReportPath, '_blank');
+                    }
+                }, 1000);
             }
         }
 
         function closeModal() {
             document.getElementById('reportModal').classList.remove('active');
-        }
-
-        function viewDetails(teacherName) {
-            // You can implement a details view modal here
-            showNotification('View details feature coming soon!', 'info');
         }
 
         // Auto-refresh every 5 minutes
