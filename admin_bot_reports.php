@@ -72,6 +72,54 @@ function getDescriptiveRating($score) {
     return 'Not Rated';
 }
 
+function getInstructionalInterpretation($score) {
+    if ($score >= 3.25) {
+        return 'The teacher demonstrates Distinguished instructional competence. Lessons are exceptionally well-prepared, clearly delivered, and enriched with varied effective strategies that cater to diverse learner needs. The teacher shows mastery of the subject matter and seamlessly connects lessons with real-life applications.';
+    } elseif ($score >= 2.50) {
+        return 'The teacher exhibits Competent instructional competence. Lessons are clearly discussed, and students are effectively engaged. The teacher demonstrates good command of the subject matter and uses suitable strategies to support learning.';
+    } elseif ($score >= 1.75) {
+        return 'The teacher shows Progressing instructional competence. Instructional methods are adequate, but further improvement in delivery, variety of strategies, and student engagement is encouraged.';
+    } else {
+        return 'The teacher\'s instructional competence Needs Improvement. Lessons may lack clear structure, engagement, or effective strategies. Immediate mentoring and professional development are highly recommended.';
+    }
+}
+
+function getManagementInterpretation($score) {
+    if ($score >= 3.25) {
+        return 'The teacher demonstrates Distinguished classroom management skills. A well-disciplined, safe, and highly motivating classroom environment is consistently maintained. Students show exceptional respect and positive behavior.';
+    } elseif ($score >= 2.50) {
+        return 'The teacher shows Competent management ability. Classroom procedures are well-implemented, and a conducive learning environment is sustained. The teacher handles students with fairness and professionalism.';
+    } elseif ($score >= 1.75) {
+        return 'The teacher\'s management skills are Progressing. Classroom order and discipline are generally maintained, though consistency and proactive strategies can still be improved.';
+    } else {
+        return 'The teacher\'s management skills Need Improvement. The classroom environment may not be consistently conducive to learning. Immediate intervention and training are recommended.';
+    }
+}
+
+function getProfessionalismInterpretation($score) {
+    if ($score >= 3.25) {
+        return 'The teacher displays Distinguished professional and ethical qualities. Professionalism, emotional balance, and enthusiasm are consistently evident. The teacher maintains impeccable grooming, clear communication, and harmonious relationships.';
+    } elseif ($score >= 2.50) {
+        return 'The teacher exhibits Competent professional and social qualities. Professional conduct, good communication, and positive interpersonal skills are consistently observed.';
+    } elseif ($score >= 1.75) {
+        return 'The teacher shows Progressing professional qualities. The teacher interacts adequately but may still enhance professional presentation or emotional stability.';
+    } else {
+        return 'The teacher\'s professional qualities Need Improvement. Professionalism or emotional balance may be lacking. Immediate development through mentoring is advised.';
+    }
+}
+
+function getOverallInterpretation($score) {
+    if ($score >= 3.25) {
+        return 'The teacher\'s Overall Performance is Distinguished. This reflects exceptional competence across all areas — instructional competence, classroom management, and professionalism. The teacher consistently exceeds expectations and serves as an excellent role model.';
+    } elseif ($score >= 2.50) {
+        return 'The teacher\'s Overall Performance is Competent. The teacher meets and often exceeds expectations, demonstrating effective teaching, sound classroom management, and good professional conduct.';
+    } elseif ($score >= 1.75) {
+        return 'The teacher\'s Overall Performance is Progressing. The teacher meets minimum standards but would benefit from ongoing professional development in several areas.';
+    } else {
+        return 'The teacher\'s Overall Performance Needs Improvement. Immediate intervention and professional coaching are necessary to improve competency and effectiveness.';
+    }
+}
+
 function generateBotSummaryReport($pdo, $teacherName) {
     // Get all evaluations for this teacher
     $stmt = $pdo->prepare("
@@ -192,33 +240,37 @@ function generateBotSummaryReport($pdo, $teacherName) {
                 <th>Average Score</th>
                 <th>Weight</th>
                 <th>Weighted Score</th>
+                <th>Interpretation</th>
             </tr>
             <tr>
-                <td>Instructional Competence</td>
+                <td><strong>Instructional Competence</strong></td>
                 <td>' . number_format($aOverall, 2) . '</td>
                 <td>40%</td>
                 <td>' . number_format($aOverall * 0.40, 2) . '</td>
+                <td>' . getInstructionalInterpretation($aOverall) . '</td>
             </tr>
             <tr>
-                <td>Classroom Management</td>
+                <td><strong>Classroom Management</strong></td>
                 <td>' . number_format($bOverall, 2) . '</td>
                 <td>30%</td>
                 <td>' . number_format($bOverall * 0.30, 2) . '</td>
+                <td>' . getManagementInterpretation($bOverall) . '</td>
             </tr>
             <tr>
-                <td>Professionalism</td>
+                <td><strong>Professionalism</strong></td>
                 <td>' . number_format($cOverall, 2) . '</td>
                 <td>30%</td>
                 <td>' . number_format($cOverall * 0.30, 2) . '</td>
+                <td>' . getProfessionalismInterpretation($cOverall) . '</td>
             </tr>
             <tr style="background: #f0e6e6; font-weight: bold;">
-                <td colspan="3" style="text-align: right;">TOTAL SCORE</td>
-                <td>' . number_format($totalScore, 2) . '</td>
+                <td colspan="4" style="text-align: right;">OVERALL PERFORMANCE</td>
+                <td>' . getOverallInterpretation($totalScore) . '</td>
             </tr>
         </table>
         
         <div style="text-align: center; margin: 20px 0;">
-            <span class="rating">Rating: ' . getDescriptiveRating($totalScore) . '</span>
+            <span class="rating">Rating: ' . getDescriptiveRating($totalScore) . ' (' . number_format($totalScore, 2) . ')</span>
         </div>
         
         <h2>Individual Evaluations</h2>
@@ -464,6 +516,10 @@ function formatBytes($bytes) {
             padding: 12px;
             border-bottom: 1px solid #e0e0e0;
         }
+        td:last-child {
+            font-size: 0.9em;
+            line-height: 1.4;
+        }                                                                
 
         tr:hover {
             background: #f9f5eb;
