@@ -81,7 +81,7 @@ function insertAllTeacherAssignments($pdo) {
     
     $collegeTeachers = [
         // BSCS Programs
-        'BSCS-1M1' => ['MR. VELE', 'MR. V. GORDON', 'MR. JIMENEZ', 'MS. RENDORA', 'MR. ATIENZA'],
+        'BSCS-1M1' => ['MRS. VELE', 'MR. V. GORDON', 'MR. JIMENEZ', 'MS. RENDORA', 'MR. ATIENZA'],
         'BSCS-2N1' => ['MR. RODRIGUEZ', 'MR. JIMENEZ', 'MS. RENDORA', 'MR. GORDON'],
         'BSCS-3M1' => ['MR. PATALEN', 'MS. DIMAPILIS', 'MR. V. GORDON', 'MR. RODRIGUEZ'],
         'BSCS-4N1' => ['MR. CALCEÑA', 'MR. V. GORDON', 'MR. MATILA'],
@@ -102,7 +102,7 @@ function insertAllTeacherAssignments($pdo) {
         'BTVTED-3M1' => ['MS. OCTAVO', 'MR. VALENZUELA', 'MS. MAGNO', 'MS. TESORO'],
         'BTVTED-4M1' => ['MS. TESORO'],
         'BTVTED-1-SUNDAY CLASS' => ['MR. PATIAM', 'MR. VELE', 'MR. RODRIGUEZ', 'MRS. VELE', 'MS. GENTEROY', 'MS. OCTAVO', 'MR. MATILA', 'MR. VALENZUELA'],
-        'BTVTED-2-SUNDAY CLASS' => ['MR. ORNACHO', 'MR. PATIAM', 'MS. OCTAVO', 'MR. VALENZUELA', 'MS. GENTEROY', 'MR. VELE', 'MS. VELE', 'MS. DIMAPILIS'],
+        'BTVTED-2-SUNDAY CLASS' => ['MR. ORNACHO', 'MR. PATIAM', 'MS. OCTAVO', 'MR. VALENZUELA', 'MS. GENTEROY', 'MR. VELE', 'MS. DIMAPILIS'],
     ];
     
     $collegeCount = 0;
