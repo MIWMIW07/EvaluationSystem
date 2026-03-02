@@ -1,5 +1,6 @@
 <?php
 // evaluation_form.php - Updated version with separate positive/negative comments
+date_default_timezone_set('Asia/Manila');
 session_start();
 
 // Check if user is logged in and is a student
