@@ -222,15 +222,13 @@ function generateBotSummaryReport($pdo, $teacherName) {
             <p><strong>Report Generated:</strong> ' . date('F j, Y \a\t g:i A') . '</p>
         </div>
         
-        <div class="rating-scale">
-            <h3 style="color: #800000;">Rating Scale</h3>
-            <table>
-                <tr><th>Score Range</th><th>Descriptive Rating</th></tr>
-                <tr><td>3.25 - 4.00</td><td><strong style="color:#800000;">Distinguished</strong></td></tr>
-                <tr><td>2.50 - 3.24</td><td><strong style="color:#28a745;">Competent</strong></td></tr>
-                <tr><td>1.75 - 2.49</td><td><strong style="color:#ffc107;">Progressing</strong></td></tr>
-                <tr><td>1.00 - 1.74</td><td><strong style="color:#dc3545;">Needs Improvement</strong></td></tr>
-            </table>
+        <!-- Compact Rating Scale -->
+        <div style="margin: 10px 0; padding: 8px; background: #f0f0f0; border-radius: 5px; font-size: 9pt; text-align: center;">
+            <strong style="color:#800000;">Rating Scale:</strong> 
+            3.25-4.00 = <span style="color:#800000; font-weight: bold;">Distinguished</span> | 
+            2.50-3.24 = <span style="color:#28a745; font-weight: bold;">Competent</span> | 
+            1.75-2.49 = <span style="color:#ffc107; font-weight: bold;">Progressing</span> | 
+            1.00-1.74 = <span style="color:#dc3545; font-weight: bold;">Needs Improvement</span>
         </div>
         
         <h2>Overall Performance</h2>
