@@ -331,6 +331,11 @@ function getCoverPageHTML($teacherName, $program, $teachingScore, $managementSco
             </div>
         </div>
         <hr style="border: 2px solid #800000; margin: 20px 0;">
+        $content .= '
+        <h2>Summary Report - Detailed Results</h2>
+        <div class="stat-box">
+            <p><strong>Teacher:</strong> ' . strtoupper($teacherName) . '</p>
+        </div>';
         <h1>Teacher Evaluation by the students result</h1>
     </div>
     
@@ -732,7 +737,6 @@ function generateSummaryReport($pdo, $teacherName, $program, $outputPath) {
         <div class="stat-box">
             <p><strong>Teacher:</strong> ' . strtoupper($teacherName) . '</p>
             <p><strong>Program:</strong> ' . $program . ' (ALL SECTIONS)</p>
-            <p><strong>Sections Included:</strong> ' . $sectionsText . '</p>
             <p><strong>Total Students Evaluated:</strong> ' . $totalStudents . '</p>
             <p><strong>Date Generated:</strong> ' . date('F j, Y') . '</p>
         </div>';
