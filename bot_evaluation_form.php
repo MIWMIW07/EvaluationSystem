@@ -1,5 +1,6 @@
 <?php
 // bot_evaluation_form.php - Classroom Observation Form for BOT
+date_default_timezone_set('Asia/Manila');
 session_start();
 
 // Check if user is logged in and is a BOT
