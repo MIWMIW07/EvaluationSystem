@@ -328,14 +328,12 @@ function getCoverPageHTML($teacherName, $program, $teachingScore, $managementSco
             <div>
                 <div class="school-name">PHILIPPINE TECHNOLOGICAL INSTITUTE OF SCIENCE ARTS AND TRADE, INC.</div>
                 <div style="font-size: 14pt; color: #666; margin-top: 5px;">GMA-BRANCH (2ND Semester 2025-2026)</div>
+                <div style="font-size: 16pt; font-weight: bold; color: #800000; margin-top: 15px;">
+                Teacher: ' . strtoupper($teacherName) . '
+            </div>
             </div>
         </div>
-        <hr style="border: 2px solid #800000; margin: 20px 0;">
-        $content .= '
-        <h2>Summary Report - Detailed Results</h2>
-        <div class="stat-box">
-            <p><strong>Teacher:</strong> ' . strtoupper($teacherName) . '</p>
-        </div>';
+        <hr style="border: 2px solid #800000; margin: 20px 0;">   
         <h1>Teacher Evaluation by the students result</h1>
     </div>
     
