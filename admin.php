@@ -1,4 +1,6 @@
 <?php
+//admin.php
+date_default_timezone_set('Asia/Manila');
 // Fix for header warning - add output buffering
 ob_start();
 session_start();
