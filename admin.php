@@ -18,14 +18,22 @@ function customRound($score) {
     }
 }
 
-// Get evaluation statistics
+// Get evaluation statistics with accurate completion status
 try {
     $pdo = getPDO();
+    
+    // Get total number of teachers per section for accurate completion calculation
+    $teacherCountPerSection = $pdo->query("
+        SELECT section, COUNT(*) as total_teachers
+        FROM teacher_assignments 
+        WHERE is_active = true 
+        GROUP BY section
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
     
     // Total evaluations count
     $totalEvals = $pdo->query("SELECT COUNT(*) FROM evaluations")->fetchColumn();
     
-    // Recent evaluations (last 10) - WITH COMMENTS
+    // Recent evaluations (last 10)
     $recentEvals = $pdo->query("
         SELECT * 
         FROM evaluations 
@@ -33,13 +41,12 @@ try {
         LIMIT 10
     ")->fetchAll(PDO::FETCH_ASSOC);
     
-    // Teacher statistics - FIXED QUERY with proper percentage calculation
+    // Teacher statistics
     $teacherStats = $pdo->query("
         SELECT 
             teacher_name, 
             program,
             COUNT(*) as eval_count,
-            -- Correct calculation: average of 20 questions (each 1-5) converted to percentage
             (AVG((q1_1 + q1_2 + q1_3 + q1_4 + q1_5 + q1_6 + 
                  q2_1 + q2_2 + q2_3 + q2_4 + 
                  q3_1 + q3_2 + q3_3 + q3_4 + 
@@ -49,11 +56,10 @@ try {
         ORDER BY teacher_name, program
     ")->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get data for the average rate line graph - FIXED QUERY
+    // Graph data
     $graphData = $pdo->query("
         SELECT 
             teacher_name,
-            -- Correct calculation: average of 20 questions (each 1-5) converted to percentage
             (AVG((q1_1 + q1_2 + q1_3 + q1_4 + q1_5 + q1_6 + 
                  q2_1 + q2_2 + q2_3 + q2_4 + 
                  q3_1 + q3_2 + q3_3 + q3_4 + 
@@ -64,7 +70,7 @@ try {
         ORDER BY avg_score DESC
     ")->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get student names for each teacher and program - UPDATED TO INCLUDE COMMENTS
+    // Get student names for each teacher and program
     $teacherStudents = $pdo->query("
         SELECT 
             teacher_name,
@@ -82,6 +88,7 @@ try {
         ORDER BY teacher_name, program, submitted_at DESC
     ")->fetchAll(PDO::FETCH_ASSOC);
 
+    // FIXED: Get accurate student completion status based on actual teacher count per section
     $allStudentsQuery = "
         SELECT 
             student_name,
@@ -96,6 +103,17 @@ try {
     
     $allStudents = $pdo->query($allStudentsQuery)->fetchAll(PDO::FETCH_ASSOC);
     
+    // Calculate completion status based on actual teacher count per section
+    foreach ($allStudents as &$student) {
+        $section = $student['section'];
+        $totalTeachersInSection = $teacherCountPerSection[$section] ?? 0;
+        $evaluated = $student['evaluated_teachers'];
+        
+        // Student is complete if they've evaluated ALL teachers in their section
+        $student['is_completed'] = ($totalTeachersInSection > 0 && $evaluated >= $totalTeachersInSection);
+        $student['total_teachers_in_section'] = $totalTeachersInSection;
+    }
+    
 } catch (Exception $e) {
     error_log("Admin Dashboard Error: " . $e->getMessage());
     $totalEvals = 0;
@@ -104,9 +122,10 @@ try {
     $graphData = [];
     $teacherStudents = [];
     $allStudents = [];
+    $teacherCountPerSection = [];
 }
 
-// Group teacher stats by teacher name for folder-style display
+// Group teacher stats by teacher name
 $groupedTeacherStats = [];
 foreach ($teacherStats as $stat) {
     $teacherName = $stat['teacher_name'];
@@ -131,7 +150,7 @@ foreach ($teacherStudents as $student) {
     $groupedStudents[$teacherName][$program][] = $student;
 }
 
-// Calculate overall average rating for quick stats - FIXED CALCULATION
+// Calculate overall average rating
 $overallAvgRating = 0;
 if (!empty($teacherStats)) {
     $totalScore = 0;
@@ -143,7 +162,7 @@ if (!empty($teacherStats)) {
     $overallAvgRating = $totalEvaluations > 0 ? $totalScore / $totalEvaluations : 0;
 }
 
-ob_end_clean(); // Clean the output buffer
+ob_end_clean();
 ?>
 
 <!DOCTYPE html>
@@ -979,45 +998,55 @@ ob_end_clean(); // Clean the output buffer
         }
 
         /* Student Status Styles */
-.status-completed {
-    background: #e8f5e8 !important;
-    border-left: 4px solid #28a745;
-}
+        .status-completed {
+            background: #e8f5e8 !important;
+            border-left: 4px solid #28a745;
+        }
 
-.status-pending {
-    background: #fff3cd !important;
-    border-left: 4px solid #ffc107;
-}
+        .status-pending {
+            background: #fff3cd !important;
+            border-left: 4px solid #ffc107;
+        }
 
-.status-badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 0.85em;
-}
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
 
-.status-badge.status-completed {
-    background: #28a745;
-    color: white;
-}
+        .status-badge.status-completed {
+            background: #28a745;
+            color: white;
+        }
 
-.status-badge.status-pending {
-    background: #ffc107;
-    color: #212529;
-}
+        .status-badge.status-pending {
+            background: #ffc107;
+            color: #212529;
+        }
 
-.completion-stats .stat-card {
-    border-top: none;
-    text-align: center;
-}
+        .completion-stats .stat-card {
+            border-top: none;
+            text-align: center;
+        }
 
-.completion-stats .stat-number {
-    font-size: 2.2em;
-}
+        .completion-stats .stat-number {
+            font-size: 2.2em;
+        }
 
-.completion-stats .stat-label {
-    font-size: 1em;
-}
+        .completion-stats .stat-label {
+            font-size: 1em;
+        }
+        
+        .teacher-info-badge {
+            display: inline-block;
+            background: var(--info);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -1095,53 +1124,27 @@ ob_end_clean(); // Clean the output buffer
         <div class="card">
             <h3><i class="fas fa-tasks"></i> Quick Actions</h3>
             <div class="action-buttons">
-                <button class="btn" style="background: #28a745;" onclick="generateLocalReports()" 
-                        onmouseover="this.style.backgroundColor='#218838'" 
-                        onmouseout="this.style.backgroundColor='#28a745'">
-                    <i class="fas fa-chart-bar"></i> Generate Reports
+                <button class="btn btn-success" onclick="generateLocalReports()">
+                    <i class="fas fa-chart-bar"></i> Generate Evaluation Reports
                 </button>
-                
-                <button class="btn" style="background: #17a2b8;" onclick="refreshEvaluations()"
-                        onmouseover="this.style.backgroundColor='#138496'" 
-                        onmouseout="this.style.backgroundColor='#17a2b8'">
-                    <i class="fas fa-sync-alt"></i> Refresh
+                <button class="btn btn-info" onclick="refreshEvaluations()">
+                    <i class="fas fa-sync-alt"></i> Refresh Evaluations
                 </button>
-                
-                <a href="maintenance.php" class="btn" style="background: #ffc107; color: #212529;"
-                   onmouseover="this.style.backgroundColor='#e0a800'" 
-                   onmouseout="this.style.backgroundColor='#ffc107'">
-                    <i class="fas fa-tools"></i> Maintenance
+                <a href="maintenance.php" class="btn btn-warning" onclick="return confirmMaintenance()">
+                    <i class="fas fa-tools"></i> System Maintenance
                 </a>
-                
-                <a href="admin_download_reports.php" class="btn" style="background: #d4af37; color: #212529;"
-                   onmouseover="this.style.backgroundColor='#b8941f'" 
-                   onmouseout="this.style.backgroundColor='#d4af37'">
-                    <i class="fas fa-download"></i> Download
+                <a href="admin_download_reports.php" class="btn btn-gold">
+                    <i class="fas fa-download"></i> Download Reports
                 </a>
-                
-                <a href="admin_bot_reports.php" class="btn" style="background: #800000;"
-                   onmouseover="this.style.backgroundColor='#660000'" 
-                   onmouseout="this.style.backgroundColor='#800000'">
-                    <i class="fas fa-clipboard-check"></i> BOT Reports
+                <a href="admin_bot_reports.php" class="btn btn-info">
+                    <i class="fas fa-clipboard-check"></i> BOT Evaluation Reports
                 </a>
-                
-                <a href="admin_sync_bot_data.php" class="btn" style="background: #6f42c1;"
-                   onmouseover="this.style.backgroundColor='#5a32a3'" 
-                   onmouseout="this.style.backgroundColor='#6f42c1'">
-                    <i class="fas fa-chalkboard-teacher"></i> Sync Teachers
+                <a href="admin_sync_bot_data.php" class="btn btn-primary">
+                    <i class="fas fa-chalkboard-teacher"></i> Sync BOT Teachers
                 </a>
-                
-                <a href="admin_sync_bot_users.php" class="btn" style="background: #fd7e14;"
-                   onmouseover="this.style.backgroundColor='#dc6a0b'" 
-                   onmouseout="this.style.backgroundColor='#fd7e14'">
-                    <i class="fas fa-users"></i> Sync Users
+                <a href="admin_sync_bot_users.php" class="btn btn-primary">
+                    <i class="fas fa-users"></i> Sync BOT Users
                 </a>
-                
-                <button class="btn" style="background: #28a745;" onclick="exportToCSV()"
-                        onmouseover="this.style.backgroundColor='#218838'" 
-                        onmouseout="this.style.backgroundColor='#28a745'">
-                    <i class="fas fa-file-csv"></i> Export CSV
-                </button>
             </div>
         </div>
 
@@ -1388,7 +1391,7 @@ ob_end_clean(); // Clean the output buffer
             <?php endif; ?>
         </div>
 
-        <!-- All Students Completion Status -->
+        <!-- All Students Completion Status - FIXED -->
         <div class="card">
             <h3><i class="fas fa-user-graduate"></i> Student Evaluation Completion Status</h3>
             
@@ -1411,8 +1414,7 @@ ob_end_clean(); // Clean the output buffer
                         <?php 
                         $completed = 0;
                         foreach ($allStudents as $student) {
-                            // Adjust this logic based on your actual completion criteria
-                            if ($student['evaluated_teachers'] >= 3) { // Example: completed if evaluated 3+ teachers
+                            if ($student['is_completed']) {
                                 $completed++;
                             }
                         }
@@ -1443,15 +1445,17 @@ ob_end_clean(); // Clean the output buffer
                                 <th>Section</th>
                                 <th>Program</th>
                                 <th>Teachers Evaluated</th>
+                                <th>Total in Section</th>
                                 <th>Last Evaluation</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($allStudents as $student): 
-                                $isCompleted = $student['evaluated_teachers'] >= 3; // Adjust threshold as needed
+                                $isCompleted = $student['is_completed'];
                                 $statusClass = $isCompleted ? 'status-completed' : 'status-pending';
                                 $statusText = $isCompleted ? 'Completed' : 'In Progress';
+                                $totalInSection = $student['total_teachers_in_section'] ?? '?';
                             ?>
                             <tr class="<?php echo $statusClass; ?>">
                                 <td>
@@ -1461,8 +1465,9 @@ ob_end_clean(); // Clean the output buffer
                                 <td><?php echo htmlspecialchars($student['section']); ?></td>
                                 <td><?php echo htmlspecialchars($student['program']); ?></td>
                                 <td>
-                                    <strong><?php echo $student['evaluated_teachers']; ?></strong> teachers
+                                    <strong><?php echo $student['evaluated_teachers']; ?></strong> / <?php echo $totalInSection; ?>
                                 </td>
+                                <td><?php echo $totalInSection; ?></td>
                                 <td>
                                     <?php 
                                     if ($student['last_evaluation']) {
@@ -1479,7 +1484,7 @@ ob_end_clean(); // Clean the output buffer
                                         <?php else: ?>
                                             <i class="fas fa-clock"></i>
                                         <?php endif; ?>
-                                        <?php echo $statusText; ?>
+                                        <?php echo $statusText; ?> (<?php echo $student['evaluated_teachers']; ?>/<?php echo $totalInSection; ?>)
                                     </span>
                                 </td>
                             </tr>
@@ -1687,7 +1692,7 @@ ob_end_clean(); // Clean the output buffer
                     location.reload();
                 }, 300);
             }
-        }, 30); // 30ms * 100 = 3000ms (3 seconds)
+        }, 30);
     }
     
     // Generate Local PDF Reports
@@ -1769,18 +1774,19 @@ ob_end_clean(); // Clean the output buffer
 
     function exportStudentStatus() {
         // Simple CSV export implementation
-        let csv = 'Student Name,Section,Program,Teachers Evaluated,Last Evaluation,Status\n';
+        let csv = 'Student Name,Section,Program,Teachers Evaluated,Total in Section,Last Evaluation,Status\n';
         
         document.querySelectorAll('.evaluation-table tbody tr').forEach(row => {
             const cells = row.querySelectorAll('td');
             const studentName = cells[0].textContent.replace('▶', '').trim();
             const section = cells[1].textContent;
             const program = cells[2].textContent;
-            const teachersEvaluated = cells[3].textContent.split(' ')[0];
-            const lastEvaluation = cells[4].textContent;
-            const status = cells[5].textContent;
+            const teachersEvaluated = cells[3].textContent.split('/')[0].trim();
+            const totalInSection = cells[4].textContent;
+            const lastEvaluation = cells[5].textContent;
+            const status = cells[6].textContent;
             
-            csv += `"${studentName}","${section}","${program}","${teachersEvaluated}","${lastEvaluation}","${status}"\n`;
+            csv += `"${studentName}","${section}","${program}","${teachersEvaluated}","${totalInSection}","${lastEvaluation}","${status}"\n`;
         });
         
         const blob = new Blob([csv], { type: 'text/csv' });
@@ -1788,10 +1794,22 @@ ob_end_clean(); // Clean the output buffer
         const a = document.createElement('a');
         a.setAttribute('hidden', '');
         a.setAttribute('href', url);
-        a.setAttribute('download', 'student_evaluation_status.csv');
+        a.setAttribute('download', 'student_evaluation_status_' + new Date().toISOString().slice(0,10) + '.csv');
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+    }
+    
+    // Maintenance confirmation function
+    function confirmMaintenance() {
+        const password = prompt("Enter maintenance password to continue:", "");
+        if (password === "admin123" || password === "guidanceservice2025") {
+            return true;
+        } else if (password !== null) {
+            alert("Incorrect password. Access denied.");
+            return false;
+        }
+        return false;
     }
     </script>
 </body>
