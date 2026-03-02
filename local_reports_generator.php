@@ -1,5 +1,6 @@
 <?php
 // local_reports_generator.php
+date_default_timezone_set('Asia/Manila');
 error_reporting(0);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
