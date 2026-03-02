@@ -1,5 +1,5 @@
 <?php
-//admin.php
+// admin.php
 date_default_timezone_set('Asia/Manila');
 // Fix for header warning - add output buffering
 ob_start();
@@ -108,8 +108,8 @@ try {
     // Calculate completion status based on actual teacher count per section
     foreach ($allStudents as &$student) {
         $section = $student['section'];
-        $totalTeachersInSection = $teacherCountPerSection[$section] ?? 0;
-        $evaluated = $student['evaluated_teachers'];
+        $totalTeachersInSection = isset($teacherCountPerSection[$section]) ? $teacherCountPerSection[$section] : 0;
+        $evaluated = isset($student['evaluated_teachers']) ? $student['evaluated_teachers'] : 0;
         
         // Student is complete if they've evaluated ALL teachers in their section
         $student['is_completed'] = ($totalTeachersInSection > 0 && $evaluated >= $totalTeachersInSection);
@@ -1345,7 +1345,7 @@ ob_end_clean();
                                                 <h6><i class="fas fa-users"></i> Students (<?php echo $program['eval_count']; ?>)</h6>
                                                 <div class="student-list-container">
                                                     <?php 
-                                                    $studentsInProgram = $groupedStudents[$teacherName][$program['program']] ?? [];
+                                                    $studentsInProgram = isset($groupedStudents[$teacherName][$program['program']]) ? $groupedStudents[$teacherName][$program['program']] : [];
                                                     if (!empty($studentsInProgram)): 
                                                         foreach ($studentsInProgram as $student): 
                                                             $studentAvgScore = number_format($student['avg_score'], 1);
@@ -1362,14 +1362,14 @@ ob_end_clean();
                                                                     <div class="positive-comment">
                                                                         <strong>Positive:</strong> 
                                                                         <?php 
-                                                                        $positiveComment = $student['positive_comments'] ?? '';
+                                                                        $positiveComment = isset($student['positive_comments']) ? $student['positive_comments'] : '';
                                                                         echo !empty($positiveComment) ? htmlspecialchars(substr($positiveComment, 0, 50) . (strlen($positiveComment) > 50 ? '...' : '')) : '-';
                                                                         ?>
                                                                     </div>
                                                                     <div class="negative-comment">
                                                                         <strong>Negative:</strong> 
                                                                         <?php 
-                                                                        $negativeComment = $student['negative_comments'] ?? '';
+                                                                        $negativeComment = isset($student['negative_comments']) ? $student['negative_comments'] : '';
                                                                         echo !empty($negativeComment) ? htmlspecialchars(substr($negativeComment, 0, 50) . (strlen($negativeComment) > 50 ? '...' : '')) : '-';
                                                                         ?>
                                                                     </div>
@@ -1408,15 +1408,15 @@ ob_end_clean();
             
             <div class="completion-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                 <div class="stat-card" style="background: #e8f5e8;">
-                    <div class="stat-number" id="totalStudents"><?php echo count($allStudents); ?></div>
+                    <div class="stat-number"><?php echo count($allStudents); ?></div>
                     <div class="stat-label">Total Students</div>
                 </div>
                 <div class="stat-card" style="background: #e8f5e8;">
-                    <div class="stat-number" id="completedStudents">
+                    <div class="stat-number">
                         <?php 
                         $completed = 0;
                         foreach ($allStudents as $student) {
-                            if ($student['is_completed']) {
+                            if (isset($student['is_completed']) && $student['is_completed']) {
                                 $completed++;
                             }
                         }
@@ -1426,7 +1426,7 @@ ob_end_clean();
                     <div class="stat-label">Completed Evaluations</div>
                 </div>
                 <div class="stat-card" style="background: #e8f5e8;">
-                    <div class="stat-number" id="completionRate">
+                    <div class="stat-number">
                         <?php 
                         $rate = count($allStudents) > 0 ? ($completed / count($allStudents)) * 100 : 0;
                         echo number_format($rate, 1) . '%';
@@ -1454,26 +1454,28 @@ ob_end_clean();
                         </thead>
                         <tbody>
                             <?php foreach ($allStudents as $student): 
-                                $isCompleted = $student['is_completed'];
+                                $evaluated = isset($student['evaluated_teachers']) ? $student['evaluated_teachers'] : 0;
+                                $totalInSection = isset($student['total_teachers_in_section']) ? $student['total_teachers_in_section'] : 0;
+                                $isCompleted = isset($student['is_completed']) ? $student['is_completed'] : false;
                                 $statusClass = $isCompleted ? 'status-completed' : 'status-pending';
                                 $statusText = $isCompleted ? 'Completed' : 'In Progress';
-                                $totalInSection = $student['total_teachers_in_section'] ?? '?';
+                                $lastEval = isset($student['last_evaluation']) ? $student['last_evaluation'] : null;
                             ?>
                             <tr class="<?php echo $statusClass; ?>">
                                 <td>
                                     <i class="fas fa-user-graduate"></i>
-                                    <?php echo htmlspecialchars($student['student_name']); ?>
+                                    <?php echo htmlspecialchars($student['student_name'] ?? 'Unknown'); ?>
                                 </td>
-                                <td><?php echo htmlspecialchars($student['section']); ?></td>
-                                <td><?php echo htmlspecialchars($student['program']); ?></td>
+                                <td><?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?></td>
+                                <td><?php echo htmlspecialchars($student['program'] ?? 'N/A'); ?></td>
                                 <td>
-                                    <strong><?php echo $student['evaluated_teachers']; ?></strong> / <?php echo $totalInSection; ?>
+                                    <strong><?php echo $evaluated; ?></strong> / <?php echo $totalInSection; ?>
                                 </td>
                                 <td><?php echo $totalInSection; ?></td>
                                 <td>
                                     <?php 
-                                    if ($student['last_evaluation']) {
-                                        echo date('M j, g:i A', strtotime($student['last_evaluation']));
+                                    if ($lastEval) {
+                                        echo date('M j, g:i A', strtotime($lastEval));
                                     } else {
                                         echo 'Not started';
                                     }
@@ -1486,7 +1488,7 @@ ob_end_clean();
                                         <?php else: ?>
                                             <i class="fas fa-clock"></i>
                                         <?php endif; ?>
-                                        <?php echo $statusText; ?> (<?php echo $student['evaluated_teachers']; ?>/<?php echo $totalInSection; ?>)
+                                        <?php echo $statusText; ?> (<?php echo $evaluated; ?>/<?php echo $totalInSection; ?>)
                                     </span>
                                 </td>
                             </tr>
