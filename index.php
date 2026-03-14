@@ -353,34 +353,13 @@ if (isset($_SESSION['user_id'])) {
             font-weight: 500;
         }
 
-        /* User type selector */
-        .user-type-selector {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            justify-content: center;
-        }
-
-        .user-type-btn {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            background: transparent;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
+        /* User type indicator - subtle hint */
+        .login-hint {
+            text-align: center;
+            margin: 15px 0 5px;
+            font-size: 0.8rem;
             color: #8B0000;
-            transition: all 0.3s ease;
-        }
-
-        .user-type-btn.active {
-            background: #8B0000;
-            color: white;
-            border-color: #8B0000;
-        }
-
-        .user-type-btn:hover {
-            border-color: #8B0000;
+            opacity: 0.7;
         }
 
         /* Responsive adjustments */
@@ -482,14 +461,8 @@ if (isset($_SESSION['user_id'])) {
         </div>
         
         <form method="POST" action="login.php">
-            <!-- Hidden field to specify user type (will be set by JavaScript) -->
-            <input type="hidden" name="user_type" id="userTypeInput" value="student">
-            
-            <div class="user-type-selector">
-                <button type="button" class="user-type-btn active" onclick="setUserType('student')">Student</button>
-                <button type="button" class="user-type-btn" onclick="setUserType('bot')">BOT</button>
-                <button type="button" class="user-type-btn" onclick="setUserType('admin')">Admin</button>
-            </div>
+            <!-- REMOVED: user type selector buttons -->
+            <!-- Hidden field will be determined by the system -->
             
             <div class="form-group" data-aos="fade-right" data-aos-delay="600">
                 <label for="username">Username</label>
@@ -506,6 +479,11 @@ if (isset($_SESSION['user_id'])) {
                     <input type="password" id="password" name="password" placeholder="Enter your password" required>
                     <i class="fas fa-eye password-toggle" id="passwordToggle"></i>
                 </div>
+            </div>
+            
+            <!-- Subtle hint (optional) -->
+            <div class="login-hint">
+                <i class="fas fa-info-circle"></i> Use your assigned username and password
             </div>
             
             <button type="submit" class="btn" data-aos="fade-right" data-aos-delay="900">
@@ -525,17 +503,6 @@ if (isset($_SESSION['user_id'])) {
             duration: 800,
             easing: 'ease-out-cubic'
         });
-
-        function setUserType(type) {
-            // Update hidden input
-            document.getElementById('userTypeInput').value = type;
-            
-            // Update button styles
-            document.querySelectorAll('.user-type-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-        }
 
         document.querySelector("form").addEventListener("submit", function(e) {
             e.preventDefault();
